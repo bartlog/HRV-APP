@@ -1,7 +1,4 @@
-/**
- * UI management: tab switching, BLE status, mode badge, metric display.
- * Also handles browser compatibility check on startup.
- */
+import { t } from '../i18n/index.js';
 
 // --- Browser compatibility check ---
 
@@ -15,24 +12,25 @@ export function checkBrowserCompat() {
   const isFirefox = ua.includes('Firefox');
   const isSafari = ua.includes('Safari') && !ua.includes('Chrome');
 
-  let message;
+  let messageKey;
   if (isIOS) {
-    message = 'iOS Safari unterstützt Web Bluetooth nicht. Installiere die Bluefy-App und öffne diese Seite in Bluefy.';
+    messageKey = 'compat.ios';
   } else if (isFirefox) {
-    message = 'Firefox unterstützt Web Bluetooth nicht. Bitte Chrome oder Edge ≥ 89 verwenden.';
+    messageKey = 'compat.firefox';
   } else if (isSafari) {
-    message = 'Safari unterstützt Web Bluetooth nicht. Bitte Chrome oder Edge ≥ 89 verwenden.';
+    messageKey = 'compat.safari';
   } else {
-    message = 'Dein Browser unterstützt Web Bluetooth nicht. Bitte Chrome oder Edge ≥ 89 verwenden.';
+    messageKey = 'compat.default';
   }
 
-  return { supported: false, message };
+  return { supported: false, messageKey };
 }
 
-export function showCompatWarning(message) {
+export function showCompatWarning(messageKey) {
   const el = document.getElementById('compat-warning');
   const msg = document.getElementById('compat-message');
-  if (msg) msg.textContent = message;
+  if (msg) msg.textContent = t(messageKey);
+  if (el) el.dataset.compatKey = messageKey;
   el?.classList.remove('hidden');
 
   document.getElementById('compat-dismiss')?.addEventListener('click', () => {
@@ -71,11 +69,12 @@ export function setMode(mode) {
 export function setBLEStatus(state) {
   const el = document.getElementById('ble-status');
   if (!el) return;
+  el.dataset.bleState = state;
   const states = {
-    off:        { text: '⬤ Getrennt',            cls: '' },
-    connecting: { text: '⬤ Verbinde...',         cls: 'ble-status--connecting' },
-    on:         { text: '⬤ Verbunden',           cls: 'ble-status--on' },
-    recording:  { text: '⬤ Aufzeichnung läuft', cls: 'ble-status--recording' },
+    off:        { text: t('ble.off'),       cls: '' },
+    connecting: { text: t('ble.connecting'), cls: 'ble-status--connecting' },
+    on:         { text: t('ble.on'),        cls: 'ble-status--on' },
+    recording:  { text: t('ble.recording'), cls: 'ble-status--recording' },
   };
   const s = states[state] ?? states.off;
   el.textContent = s.text;

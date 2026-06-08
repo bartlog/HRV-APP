@@ -302,6 +302,17 @@ html, body {
 /* --- ECG section inside Live tab --- */
 .ecg-section { margin-top: 1.5rem; border-top: 1px solid var(--color-border); padding-top: 1rem; }
 
+/* --- Language toggle --- */
+.lang-toggle { display: flex; gap: 2px; }
+.lang-btn {
+  font-family: var(--font-sans); font-size: .72rem; font-weight: 700;
+  padding: .18rem .42rem; border-radius: 3px; letter-spacing: .04em;
+  background: none; border: 1px solid transparent; cursor: pointer;
+  color: var(--color-text-muted); transition: color var(--transition), border-color var(--transition);
+}
+.lang-btn:hover { color: var(--color-text); }
+.lang-btn--active { color: var(--color-accent); border-color: rgba(79,142,247,.4); }
+
 /* --- Responsive --- */
 @media (max-width: 640px) {
   .header__title { display: none; }

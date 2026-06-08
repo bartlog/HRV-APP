@@ -42,6 +42,7 @@ import {
 } from './polar_pmd.js';
 
 import { db } from '../storage/db.js';
+import { t, tf } from '../i18n/index.js';
 
 const PFTP_TIMEOUT_MS = 10000;
 
@@ -157,10 +158,7 @@ export class PFTPSession {
       const existing = exercises[0];
       const isSynced = await this._isSynced(existing);
       if (!isSynced) {
-        throw new BlockerError(
-          `Nicht synchronisierte Session gefunden: "${existing}".\nBitte zuerst synchronisieren.`,
-          'UNSYNCED_SESSION', existing
-        );
+        throw new BlockerError('UNSYNCED_SESSION', 'UNSYNCED_SESSION', existing);
       }
       this._log(`Removing already-synced exercise "${existing}"…`);
       await this.removeExercise(existing);
@@ -275,14 +273,14 @@ export class PFTPSession {
   async sync(onStatus) {
     const log = msg => { this._log(msg); onStatus?.(msg); };
 
-    log('Verbinde mit Polar H10…');
+    log(t('sync.connecting'));
     await this.connect();
-    log(`Verbunden: ${this._device.name}`);
+    log(tf('sync.connected', { name: this._device.name }));
 
     const battery = await this.readBattery();
-    if (battery !== null) log(`Akku: ${battery}%`);
+    if (battery !== null) log(tf('sync.battery', { pct: battery }));
 
-    log('Stoppe laufende Aufzeichnung (falls aktiv)…');
+    log(t('sync.stopping'));
     try { await this.stopRecording(); await new Promise(r => setTimeout(r, 3000)); }
     catch (e) { this._log(`Stop warning: ${e.message}`); }
 
@@ -301,31 +299,31 @@ export class PFTPSession {
 
     if (exercises.length === 0) {
       this.disconnect();
-      throw new Error('Keine Session auf dem H10 gefunden.');
+      throw new Error(t('sync.no_session'));
     }
 
     const exerciseId = exercises[0];
-    log(`Lade Session "${exerciseId}"…`);
+    log(tf('sync.loading', { id: exerciseId }));
     const rrValues = await this.fetchExercise(exerciseId);
 
     if (rrValues.length < 10) {
       this.disconnect();
-      throw new Error(`Zu wenige RR-Intervalle (${rrValues.length}).`);
+      throw new Error(tf('sync.too_few_rr', { count: rrValues.length }));
     }
 
     const pending = await db.sessions.where('mode').equals('offline').filter(s=>!s.synced).last();
     const startUtc = pending?.startUtc ? new Date(pending.startUtc).getTime() : Date.now();
     const rrWithTimestamps = _reconstructTimeline(rrValues, startUtc);
     const durationH = +(rrValues.reduce((a,b)=>a+b,0)/1000/3600).toFixed(2);
-    log(`${rrValues.length} RR-Intervalle (${durationH} h)`);
+    log(tf('sync.rrcount', { count: rrValues.length, h: durationH }));
 
-    log('Lösche Session vom H10…');
+    log(t('sync.deleting'));
     await this.removeExercise(exerciseId);
     this.disconnect();
 
     if (pending) await db.sessions.update(pending.id, { synced: true, rrCount: rrValues.length });
 
-    log('Synchronisierung abgeschlossen.');
+    log(t('sync.done'));
     return { exerciseId, sessionId: pending?.id, rrValues, rrWithTimestamps, durationH };
   }
 

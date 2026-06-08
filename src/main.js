@@ -6,6 +6,7 @@ import { DashboardCharts } from './dashboard/charts.js';
 import { ECGViewer } from './dashboard/ecg_viewer.js';
 import { initTabs, setMode, setBLEStatus, updateMetrics, checkBrowserCompat, showCompatWarning } from './dashboard/ui.js';
 import { initGuidePanel } from './guides/guide_panel.js';
+import { t, tf, getLang, setLang, applyLanguage } from './i18n/index.js';
 import { createSession, saveRR, saveHRVMetrics, listSessions, deleteSession, db, getSessionMetrics } from './storage/db.js';
 import { exportSessionCSV } from './export/csv_export.js';
 import ChartAuto from 'chart.js/auto';
@@ -38,9 +39,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
   initTabs();
   initGuidePanel();
+  applyLanguage();
 
   const compat = checkBrowserCompat();
-  if (!compat.supported) showCompatWarning(compat.message);
+  if (!compat.supported) showCompatWarning(compat.messageKey);
+
+  // Language toggle
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const lang = btn.dataset.lang;
+      if (lang === getLang()) return;
+      setLang(lang);
+      document.documentElement.lang = lang;
+      applyLanguage();
+      // Re-apply BLE status in new language
+      const bleEl = document.getElementById('ble-status');
+      if (bleEl) setBLEStatus(bleEl.dataset.bleState ?? 'off');
+      // Re-apply connect button in new language
+      const connectBtn = document.getElementById('btn-connect');
+      if (connectBtn) {
+        const state = connectBtn.dataset.connectState ?? 'disconnected';
+        connectBtn.textContent = state === 'connected' ? t('live.disconnect') :
+                                 state === 'connecting' ? t('live.connecting') :
+                                 t('live.connect');
+      }
+      // Re-render session list with new language
+      renderSessionList();
+      // Clear analysis panels so they re-render in new language
+      document.querySelectorAll('.session-analysis').forEach(p => {
+        delete p.dataset.rendered;
+        p.innerHTML = '';
+      });
+      // Signal guide panel to reload
+      window.dispatchEvent(new Event('languagechange'));
+    });
+  });
 
   document.getElementById('btn-mock')?.addEventListener('click', startMockSession);
   document.getElementById('btn-connect')?.addEventListener('click', startLiveSession);
@@ -75,7 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const elapsedMin = Math.round((Date.now() - startedAt) / 60000);
       const statusEl = document.getElementById('offline-status');
       if (statusEl) {
-        statusEl.textContent = `Aufzeichnung läuft seit ${elapsedMin} Min. H10 zeichnet autonom auf.`;
+        statusEl.textContent = tf('status.recording_elapsed', { min: elapsedMin });
         statusEl.classList.remove('hidden');
       }
     } catch {}
@@ -150,17 +183,17 @@ async function startLiveSession() {
   }
 
   if (offlineRecordingActive) {
-    alert('Eine Offline-Aufzeichnung läuft. Bitte zuerst "Aufzeichnung beenden und speichern" ausführen.');
+    alert(t('alert.offline_active'));
     return;
   }
 
   if (!navigator.bluetooth) {
-    alert('Web Bluetooth nicht verfügbar. Bitte Chrome oder Edge ≥ 89 verwenden.');
+    alert(t('alert.no_bluetooth'));
     return;
   }
 
   const btn = document.getElementById('btn-connect');
-  if (btn) { btn.disabled = true; btn.textContent = 'Verbinde…'; }
+  if (btn) { btn.disabled = true; btn.textContent = t('live.connecting'); btn.dataset.connectState = 'connecting'; }
 
   stopActiveSession();
   setMode('live');
@@ -173,7 +206,7 @@ async function startLiveSession() {
     activeLiveSession = null;
     setBLEStatus('off');
     setMode('mock');
-    if (btn) { btn.textContent = 'H10 verbinden'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('live.connect'); btn.dataset.connectState = 'disconnected'; btn.disabled = false; }
     startMockSession();
   };
 
@@ -183,7 +216,7 @@ async function startLiveSession() {
     session.onDisconnect = onDisconnected;
 
     setBLEStatus('on');
-    if (btn) { btn.textContent = 'Verbindung trennen'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('live.disconnect'); btn.dataset.connectState = 'connected'; btn.disabled = false; }
 
     let beatCount = 0;
     createSession('live').then(id => { activeSessionId = id; }).catch(() => {});
@@ -215,9 +248,9 @@ async function startLiveSession() {
     activeLiveSession = null;
     session.disconnect();
     setBLEStatus('off');
-    if (btn) { btn.textContent = 'H10 verbinden'; btn.disabled = false; }
+    if (btn) { btn.textContent = t('live.connect'); btn.dataset.connectState = 'disconnected'; btn.disabled = false; }
     const cancelled = /cancel|denied|chosen/i.test(err.message);
-    if (!cancelled) alert(`Verbindung fehlgeschlagen: ${err.message}`);
+    if (!cancelled) alert(tf('alert.connect_failed', { msg: err.message }));
     startMockSession();
   }
 }
@@ -225,15 +258,15 @@ async function startLiveSession() {
 // --- Offline recording (Phase 1a) ---
 async function startOfflineRecording() {
   if (offlineRecordingActive) {
-    alert('Eine Aufzeichnung läuft bereits. Bitte zuerst "Aufzeichnung beenden und speichern" klicken.');
+    alert(t('alert.already_recording'));
     return;
   }
   if (activeLiveSession) {
-    alert('Live-Verbindung aktiv. Bitte zuerst die Verbindung trennen, bevor eine Aufzeichnung gestartet wird.');
+    alert(t('alert.live_active'));
     return;
   }
   if (!navigator.bluetooth) {
-    alert('Web Bluetooth nicht verfügbar. Bitte Chrome oder Edge ≥ 89 verwenden.');
+    alert(t('alert.no_bluetooth'));
     return;
   }
   const statusEl = document.getElementById('offline-status');
@@ -248,9 +281,9 @@ async function startOfflineRecording() {
 
   const session = new PFTPSession();
   try {
-    log('Verbinde mit Polar H10…');
+    log(t('status.connecting_h10'));
     const deviceName = await session.connect();
-    log(`Verbunden: ${deviceName}`);
+    log(tf('status.connected', { name: deviceName }));
     // Short hex timestamp (8 chars) — H10 FAT filesystem has trouble with long/underscore IDs
     const exerciseId = Math.floor(Date.now() / 1000).toString(16).toUpperCase();
     await session.startRecording(exerciseId);
@@ -258,12 +291,10 @@ async function startOfflineRecording() {
     sessionStorage.setItem('offlineRecording', JSON.stringify({ exerciseId, startedAt: Date.now() }));
     setBLEStatus('recording');
     updateRecordingButtons();
-    log(`Aufzeichnung aktiv. H10 zeichnet autonom auf. ID: ${exerciseId}`);
+    log(tf('status.recording_active', { id: exerciseId }));
   } catch (err) {
     if (err instanceof BlockerError && err.code === 'UNSYNCED_SESSION') {
-      const choice = confirm(
-        `${err.message}\n\nOK = Löschen und neu starten\nAbbrechen = Abbrechen`
-      );
+      const choice = confirm(tf('alert.unsynced_session', { exerciseId: err.exerciseId }));
       if (choice) {
         try {
           await session.removeExercise(err.exerciseId);
@@ -271,12 +302,12 @@ async function startOfflineRecording() {
           if (btn) btn.disabled = false;
           await startOfflineRecording(); // retry
           return;
-        } catch (e2) { log(`Fehler: ${e2.message}`); }
+        } catch (e2) { log(tf('status.error', { msg: e2.message })); }
       } else {
-        log('Abgebrochen.');
+        log(t('status.aborted'));
       }
     } else {
-      log(`Fehler: ${err.message}`);
+      log(tf('status.error', { msg: err.message }));
     }
     session.disconnect();
   } finally {
@@ -286,7 +317,7 @@ async function startOfflineRecording() {
 
 async function syncOfflineSession() {
   if (!navigator.bluetooth) {
-    alert('Web Bluetooth nicht verfügbar. Bitte Chrome oder Edge ≥ 89 verwenden.');
+    alert(t('alert.no_bluetooth'));
     return;
   }
   const statusEl = document.getElementById('offline-status');
@@ -295,7 +326,7 @@ async function syncOfflineSession() {
   if (btn) btn.disabled = true;
 
   const session = new PFTPSession(({ bytes }) => {
-    if (statusEl) statusEl.textContent = `Lade herunter… ${bytes} Bytes empfangen`;
+    if (statusEl) statusEl.textContent = tf('status.downloading', { bytes });
   });
 
   try {
@@ -325,15 +356,18 @@ async function syncOfflineSession() {
       }
       const total = rrWithTimestamps.length;
       const artifactPct = total > 0 ? (artifactCount / total * 100).toFixed(1) : '0.0';
-      const quality = artifactCount / total <= 0.02 ? 'Sehr gut' :
-                      artifactCount / total <= 0.05 ? 'Gut' :
-                      artifactCount / total <= 0.10 ? 'Mittel' : 'Schlecht';
-      if (statusEl) statusEl.textContent =
-        `Synchronisiert: ${total} RR-Werte, ${artifactCount} Artefakte (${artifactPct}%), Signalqualität: ${quality} — ` +
-        `RMSSD ${Math.round(rmssd(cleanValues))} ms, SI ${Math.round(baevskySI(cleanValues))}`;
+      const qualityRatioSync = total > 0 ? artifactCount / total : 0;
+      const quality = qualityRatioSync <= 0.02 ? t('quality.very_good') :
+                      qualityRatioSync <= 0.05 ? t('quality.good') :
+                      qualityRatioSync <= 0.10 ? t('quality.medium') : t('quality.bad');
+      if (statusEl) statusEl.textContent = tf('status.synced', {
+        total, artifacts: artifactCount, pct: artifactPct, quality,
+        rmssd: Math.round(rmssd(cleanValues)), si: Math.round(baevskySI(cleanValues)),
+      });
     } else {
-      if (statusEl) statusEl.textContent =
-        `Synchronisiert: ${rrValues.length} RR-Werte, ${durationH} h`;
+      if (statusEl) statusEl.textContent = tf('status.synced_no_session', {
+        total: rrValues.length, duration: durationH,
+      });
     }
 
     offlineRecordingActive = false;
@@ -342,7 +376,7 @@ async function syncOfflineSession() {
     updateRecordingButtons();
     renderSessionList();
   } catch (err) {
-    if (statusEl) { statusEl.textContent = `Fehler: ${err.message}`; statusEl.classList.remove('hidden'); }
+    if (statusEl) { statusEl.textContent = tf('status.error', { msg: err.message }); statusEl.classList.remove('hidden'); }
     console.error('[Sync error]', err);
     session.disconnect();
   } finally {
@@ -357,7 +391,7 @@ async function renderSessionList() {
   const all = await listSessions();
   const sessions = all.filter(s => s.mode === 'offline');
   if (sessions.length === 0) {
-    container.innerHTML = '<p class="empty-state">Noch keine Offline-Sitzungen gespeichert.</p>';
+    container.innerHTML = `<p class="empty-state">${t('sessions.empty')}</p>`;
     return;
   }
   container.innerHTML = sessions.map(s => {
@@ -372,9 +406,9 @@ async function renderSessionList() {
           <span class="session-stat">${rrCount}</span>
         </div>
         <div class="session-actions">
-          <button class="btn-analyze" data-id="${s.id}">Analysieren</button>
-          <button class="btn-export-csv" data-id="${s.id}" title="Als CSV herunterladen">CSV</button>
-          <button class="btn-session-delete" data-id="${s.id}" title="Sitzung löschen">✕</button>
+          <button class="btn-analyze" data-id="${s.id}">${t('sessions.analyze')}</button>
+          <button class="btn-export-csv" data-id="${s.id}" title="${t('sessions.export')}">${t('sessions.export')}</button>
+          <button class="btn-session-delete" data-id="${s.id}" title="${t('sessions.delete.title')}">✕</button>
         </div>
       </div>
       <div class="session-analysis hidden" data-sid="${s.id}"></div>
@@ -430,11 +464,11 @@ async function analyzeSession(sessionId, panel) {
   const artifactCount = rrRows.length - filteredRows.length;
   const artifactPct = rrRows.length > 0 ? (artifactCount / rrRows.length * 100).toFixed(1) : '0.0';
   const qualityRatio = rrRows.length > 0 ? artifactCount / rrRows.length : 0;
-  const quality = qualityRatio <= 0.02 ? 'Sehr gut' : qualityRatio <= 0.05 ? 'Gut' : qualityRatio <= 0.10 ? 'Mittel' : 'Schlecht';
+  const quality = qualityRatio <= 0.02 ? t('quality.very_good') : qualityRatio <= 0.05 ? t('quality.good') : qualityRatio <= 0.10 ? t('quality.medium') : t('quality.bad');
   const qualityColor = qualityRatio <= 0.05 ? '#34d399' : qualityRatio <= 0.10 ? '#fbbf24' : '#f87171';
 
   if (rrValues.length === 0) {
-    panel.innerHTML = '<p class="empty-state">Keine RR-Daten in der Datenbank gefunden.</p>';
+    panel.innerHTML = `<p class="empty-state">${t('sessions.no_data')}</p>`;
     return;
   }
 
@@ -456,19 +490,19 @@ async function analyzeSession(sessionId, panel) {
 
   panel.innerHTML = `
     <div class="analysis-stats">
-      <div class="analysis-stat"><div class="stat-label">Ø HR</div><div class="stat-value">${avgBpm}<small> bpm</small></div></div>
-      <div class="analysis-stat"><div class="stat-label">Ø RMSSD</div><div class="stat-value">${wRmssd}<small> ms</small></div></div>
-      <div class="analysis-stat"><div class="stat-label">Ø SDNN</div><div class="stat-value">${wSdnn}<small> ms</small></div></div>
-      <div class="analysis-stat"><div class="stat-label">Ø Stress-Index</div><div class="stat-value">${wSi}</div></div>
-      <div class="analysis-stat"><div class="stat-label">Signalqualität</div><div class="stat-value" style="color:${qualityColor}">${quality}<small> (${artifactPct}%)</small></div></div>
+      <div class="analysis-stat"><div class="stat-label">${t('stat.hr')}</div><div class="stat-value">${avgBpm}<small> bpm</small></div></div>
+      <div class="analysis-stat"><div class="stat-label">${t('stat.rmssd')}</div><div class="stat-value">${wRmssd}<small> ms</small></div></div>
+      <div class="analysis-stat"><div class="stat-label">${t('stat.sdnn')}</div><div class="stat-value">${wSdnn}<small> ms</small></div></div>
+      <div class="analysis-stat"><div class="stat-label">${t('stat.si')}</div><div class="stat-value">${wSi}</div></div>
+      <div class="analysis-stat"><div class="stat-label">${t('stat.quality')}</div><div class="stat-value" style="color:${qualityColor}">${quality}<small> (${artifactPct}%)</small></div></div>
     </div>
     <div class="analysis-charts">
       <div class="analysis-chart-wrap">
-        <p class="chart-label">RMSSD <span style="color:#4f8ef7">■</span> — Ø je 50 Herzschläge</p>
+        <p class="chart-label">${t('chart.rmssd_label')} <span style="color:#4f8ef7">■</span> — ${t('chart.window')}</p>
         <canvas id="ac-rmssd-${sessionId}"></canvas>
       </div>
       <div class="analysis-chart-wrap">
-        <p class="chart-label">Stress-Index <span style="color:#a78bfa">■</span> — Ø je 50 Herzschläge</p>
+        <p class="chart-label">${t('chart.si_label')} <span style="color:#a78bfa">■</span> — ${t('chart.window')}</p>
         <canvas id="ac-si-${sessionId}"></canvas>
       </div>
     </div>`;
