@@ -10,11 +10,13 @@ import { createSession, saveRR, saveHRVMetrics, listSessions, deleteSession, db,
 import { exportSessionCSV } from './export/csv_export.js';
 import ChartAuto from 'chart.js/auto';
 import { PFTPSession, BlockerError } from './ble/session_sync.js';
+import { LiveSession } from './ble/live_session.js';
 import './app.css';
 
 // --- State ---
 let activeGenerator = null;
 let activeSessionId = null;
+let activeLiveSession = null;
 let prevRR = null;
 const rrBuffer = [];
 const ecgLiveBuffer = [];
@@ -121,13 +123,80 @@ function startMockSession() {
   });
 }
 
-// --- Live BLE (Phase 1b stub) ---
+// --- Live BLE ---
 async function startLiveSession() {
-  if (!navigator.bluetooth) {
-    alert('Web Bluetooth nicht verfügbar.\nBitte Chrome oder Edge ≥ 89 verwenden.');
+  // Wenn bereits verbunden → trennen
+  if (activeLiveSession) {
+    activeLiveSession.disconnect();
     return;
   }
-  alert('Live-BLE wird in Phase 1b implementiert.\nJetzt: Simulation verwenden.');
+
+  if (!navigator.bluetooth) {
+    alert('Web Bluetooth nicht verfügbar. Bitte Chrome oder Edge ≥ 89 verwenden.');
+    return;
+  }
+
+  const btn = document.getElementById('btn-connect');
+  if (btn) { btn.disabled = true; btn.textContent = 'Verbinde…'; }
+
+  stopActiveSession();
+  setMode('live');
+  setBLEStatus('connecting');
+  ensureCharts();
+
+  const session = new LiveSession();
+
+  const onDisconnected = () => {
+    activeLiveSession = null;
+    setBLEStatus('off');
+    setMode('mock');
+    if (btn) { btn.textContent = 'H10 verbinden'; btn.disabled = false; }
+    startMockSession();
+  };
+
+  try {
+    const name = await session.connect();
+    activeLiveSession = session;
+    session.onDisconnect = onDisconnected;
+
+    setBLEStatus('on');
+    if (btn) { btn.textContent = 'Verbindung trennen'; btn.disabled = false; }
+
+    let beatCount = 0;
+    createSession('live').then(id => { activeSessionId = id; }).catch(() => {});
+
+    await session.startStreaming((rrMs, hr) => {
+      const filtered = filterRR(rrMs, prevRR);
+      prevRR = filtered ?? prevRR;
+      if (!filtered) return;
+
+      rrBuffer.push(filtered);
+      if (rrBuffer.length > HRV_WINDOW) rrBuffer.shift();
+
+      if (activeSessionId) saveRR(activeSessionId, filtered).catch(() => {});
+
+      beatCount++;
+      if (beatCount % METRICS_INTERVAL === 0 && rrBuffer.length >= 10) {
+        const r = rmssd(rrBuffer);
+        const s = sdnn(rrBuffer);
+        const si = baevskySI(rrBuffer);
+        updateMetrics({ rmssd: r, sdnn: s, si, hr, lfhf: NaN, edr: NaN });
+        charts?.addPoint(Date.now(), r, si);
+        if (activeSessionId) {
+          saveHRVMetrics(activeSessionId, { rmssd: r, sdnn: s, si, lf: NaN, hf: NaN, lfhf: NaN, edr: NaN }).catch(() => {});
+        }
+      }
+    });
+
+  } catch (err) {
+    activeLiveSession = null;
+    session.disconnect();
+    setBLEStatus('off');
+    if (btn) { btn.textContent = 'H10 verbinden'; btn.disabled = false; }
+    const cancelled = /cancel|denied|chosen/i.test(err.message);
+    if (!cancelled) alert(`Verbindung fehlgeschlagen: ${err.message}`);
+    startMockSession();
+  }
 }
 
 // --- Offline recording (Phase 1a) ---
@@ -1266,6 +1335,8 @@ async function connectedRecordingTest() {
 function stopActiveSession() {
   activeGenerator?.stop();
   activeGenerator = null;
+  activeLiveSession?.disconnect();
+  activeLiveSession = null;
   activeSessionId = null;
   rrBuffer.length = 0;
   ecgLiveBuffer.length = 0;
