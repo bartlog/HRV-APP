@@ -52,8 +52,12 @@ Nach dem Löschen der Website-Daten sind alle Sitzungen unwiderruflich weg.
 
 ## Daten exportieren / sichern
 
-Ein Export (CSV, EDF+D) ist geplant und wird in einer der nächsten Versionen verfügbar sein.
-Bis dahin: Die Rohdaten liegen in IndexedDB und können mit Browser-Entwicklertools (F12 → Application → IndexedDB) eingesehen werden.
+**CSV-Export** ist verfügbar: Tab **„Auswerten"** → **„CSV"**-Button neben jeder Sitzung.
+
+Die CSV-Datei enthält alle RR-Intervalle mit Zeitstempel sowie die berechneten HRV-Fenster.
+Sie kann in Excel, Python (pandas), R oder MATLAB weiterverarbeitet werden.
+
+**EDF+D-Export** (für EDFbrowser / klinische Software) ist geplant.
 
 ---
 

@@ -31,9 +31,9 @@
 
 - Klick auf **„Verbindung trennen"**
 - Session wird automatisch in IndexedDB gespeichert
-- Tab **„Auswerten":** Session erscheint in der Liste
+- Tab **„Auswerten":** Session erscheint in der Liste → **„CSV"** exportiert alle RR-Intervalle + HRV-Fenster als Datei
 
-> **Hinweis:** CSV- und EDF-Export sind geplant und werden in einer der nächsten Versionen verfügbar sein.
+> **Hinweis:** EDF+D-Export ist geplant und wird in einer der nächsten Versionen verfügbar sein.
 
 ---
 

@@ -7,6 +7,7 @@ import { ECGViewer } from './dashboard/ecg_viewer.js';
 import { initTabs, setMode, setBLEStatus, updateMetrics, checkBrowserCompat, showCompatWarning } from './dashboard/ui.js';
 import { initGuidePanel } from './guides/guide_panel.js';
 import { createSession, saveRR, saveHRVMetrics, listSessions, deleteSession, db, getSessionMetrics } from './storage/db.js';
+import { exportSessionCSV } from './export/csv_export.js';
 import ChartAuto from 'chart.js/auto';
 import { PFTPSession, BlockerError } from './ble/session_sync.js';
 import './app.css';
@@ -249,6 +250,7 @@ async function renderSessionList() {
         </div>
         <div class="session-actions">
           <button class="btn-analyze" data-id="${s.id}">Analysieren</button>
+          <button class="btn-export-csv" data-id="${s.id}" title="Als CSV herunterladen">CSV</button>
           <button class="btn-session-delete" data-id="${s.id}" title="Sitzung löschen">✕</button>
         </div>
       </div>
@@ -262,6 +264,15 @@ async function renderSessionList() {
       if (!panel) return;
       panel.classList.toggle('hidden');
       if (!panel.classList.contains('hidden')) await analyzeSession(sid, panel);
+    });
+  });
+  container.querySelectorAll('.btn-export-csv').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      try {
+        await exportSessionCSV(Number(btn.dataset.id));
+      } catch (e) {
+        alert(`Export fehlgeschlagen: ${e.message}`);
+      }
     });
   });
   container.querySelectorAll('.btn-session-delete').forEach(btn => {

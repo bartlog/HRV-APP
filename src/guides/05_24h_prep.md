@@ -48,8 +48,9 @@ PC/Laptop in BLE-Reichweite:
 - Tab **„Auswerten"** → Session auswählen → **„Analysieren"**
 - Diagramm: RMSSD und Stress-Index über die Messung (Uhrzeit auf x-Achse)
 - Schlaf-Phasen erkennbar: niedriger SI + hoher RMSSD
+- **„CSV"**-Button: exportiert alle RR-Intervalle + HRV-Fenster als `.csv`-Datei
 
-> **Hinweis:** CSV- und EDF-Export sind geplant und werden in einer der nächsten Versionen verfügbar sein.
+> **Hinweis:** EDF+D-Export ist geplant und wird in einer der nächsten Versionen verfügbar sein.
 
 ---
 
