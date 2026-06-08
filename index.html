@@ -115,6 +115,7 @@
         <div class="metric-card__unit">/min</div>
       </div>
     </div>
+    <p class="metrics-note" data-i18n="metric.window_note">Ø der letzten 300 Herzschläge</p>
     <div class="chart-container">
       <canvas id="chart-rmssd"></canvas>
     </div>
@@ -122,11 +123,7 @@
       <canvas id="chart-si"></canvas>
     </div>
     <div class="ecg-section">
-      <div class="ecg-controls">
-        <label for="ecg-slider" data-i18n="ecg.position">Position</label>
-        <input type="range" id="ecg-slider" min="0" max="0" value="0" step="10" />
-        <span id="ecg-time-label">00:00</span>
-      </div>
+      <p class="ecg-label" data-i18n="ecg.label">EKG — Echtzeit</p>
       <canvas id="ecg-canvas" class="ecg-canvas"></canvas>
       <p class="ecg-hint" id="ecg-hint" data-i18n="ecg.hint">Starte eine Session um EKG-Daten zu sehen.</p>
     </div>

@@ -37,10 +37,10 @@ function makeChart(canvasId, label, color, extraPlugins = []) {
         label,
         data: [],
         borderColor: color,
-        backgroundColor: color + '18',
+        backgroundColor: 'transparent',
         borderWidth: 1.5,
         pointRadius: 0,
-        fill: true,
+        fill: false,
         tension: 0.3,
       }],
     },
@@ -71,6 +71,15 @@ export class DashboardCharts {
   constructor() {
     this._rmssdChart = makeChart('chart-rmssd', 'RMSSD (ms)', '#4f8ef7');
     this._siChart    = makeChart('chart-si',    'Stress-Index', '#f87171', [siZonesPlugin]);
+  }
+
+  reset() {
+    for (const chart of [this._rmssdChart, this._siChart]) {
+      if (!chart) continue;
+      chart.data.labels = [];
+      chart.data.datasets[0].data = [];
+      chart.update('none');
+    }
   }
 
   addPoint(timestampMs, rmssd, si) {

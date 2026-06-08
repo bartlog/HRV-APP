@@ -123,6 +123,8 @@ function startMockSession() {
   setMode('mock');
   if (!offlineRecordingActive) setBLEStatus('off');
   ensureCharts();
+  charts?.reset();
+  updateMetrics({});
 
   const gen = new MockGenerator();
   activeGenerator = gen;
@@ -205,9 +207,11 @@ async function startLiveSession() {
   const onDisconnected = () => {
     activeLiveSession = null;
     setBLEStatus('off');
-    setMode('mock');
     if (btn) { btn.textContent = t('live.connect'); btn.dataset.connectState = 'disconnected'; btn.disabled = false; }
-    startMockSession();
+    // Freeze charts and metrics — user must explicitly press Simulation or reconnect
+    rrBuffer.length = 0;
+    prevRR = null;
+    activeSessionId = null;
   };
 
   try {
@@ -216,6 +220,8 @@ async function startLiveSession() {
     session.onDisconnect = onDisconnected;
 
     setBLEStatus('on');
+    charts?.reset();
+    updateMetrics({});
     if (btn) { btn.textContent = t('live.disconnect'); btn.dataset.connectState = 'connected'; btn.disabled = false; }
 
     let beatCount = 0;
@@ -476,7 +482,6 @@ async function analyzeSession(sessionId, panel) {
   const avgBpm = Math.round(60000 / avgRR);
   const wRmssd = Math.round(rmssd(rrValues));
   const wSdnn  = Math.round(sdnn(rrValues));
-  const wSi    = Math.round(baevskySI(rrValues));
 
   // Windowed RMSSD + SI — 50-beat windows for smooth curve, real clock times on x-axis
   const WIN = 50;
@@ -487,6 +492,11 @@ async function analyzeSession(sessionId, panel) {
     siSeries.push(Math.round(baevskySI(w)));
     timeLabels.push(new Date(filteredRows[i - 1].timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
   }
+
+  // SI average = mean of windowed series (baevskySI over the full array is unreliable for long recordings)
+  const wSi = siSeries.length > 0
+    ? Math.round(siSeries.reduce((a, b) => a + b, 0) / siSeries.length)
+    : Math.round(baevskySI(rrValues));
 
   panel.innerHTML = `
     <div class="analysis-stats">

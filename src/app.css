@@ -164,7 +164,9 @@ html, body {
   border-radius: var(--radius);
   display: block;
 }
+.ecg-label { font-size: .75rem; color: var(--color-text-muted); margin-bottom: .5rem; }
 .ecg-hint { color: var(--color-text-muted); font-size: .85rem; margin-top: .75rem; }
+.metrics-note { font-size: .72rem; color: var(--color-text-muted); margin: -.75rem 0 1rem; }
 
 /* --- Sessions tab --- */
 .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
