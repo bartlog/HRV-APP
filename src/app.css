@@ -98,6 +98,7 @@ html, body {
 .btn--secondary:hover { background: rgba(79,142,247,.1); }
 .btn--ghost { background: transparent; color: var(--color-text-muted); border-color: var(--color-border); }
 .btn--ghost:hover { color: var(--color-text); border-color: var(--color-text-muted); }
+.btn:disabled { opacity: .4; cursor: not-allowed; pointer-events: none; }
 
 /* --- Tabs --- */
 .tabs {

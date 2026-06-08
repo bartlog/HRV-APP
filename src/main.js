@@ -71,7 +71,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const { startedAt } = JSON.parse(savedRecording);
       offlineRecordingActive = true;
       setBLEStatus('recording');
-      document.getElementById('btn-start-recording')?.setAttribute('disabled', '');
       const elapsedMin = Math.round((Date.now() - startedAt) / 60000);
       const statusEl = document.getElementById('offline-status');
       if (statusEl) {
@@ -1378,5 +1377,5 @@ function stopActiveSession() {
   rrBuffer.length = 0;
   ecgLiveBuffer.length = 0;
   prevRR = null;
-  setBLEStatus('off');
+  if (!offlineRecordingActive) setBLEStatus('off');
 }
