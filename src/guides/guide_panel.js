@@ -10,6 +10,7 @@ const GUIDES = {
   '05_24h_prep':            () => import('./05_24h_prep.md?raw'),
   '06_h10_troubleshooting': () => import('./06_h10_troubleshooting.md?raw'),
   '07_datenschutz':         () => import('./07_datenschutz.md?raw'),
+  '08_hrv_metriken':        () => import('./08_hrv_metriken.md?raw'),
 };
 
 export function initGuidePanel() {
