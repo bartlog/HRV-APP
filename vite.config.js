@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-  base: '/hrv-app/',
+  base: '/HRV-APP/',
   test: {
     environment: 'jsdom',
     globals: true,
