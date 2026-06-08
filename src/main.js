@@ -88,7 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function startMockSession() {
   stopActiveSession();
   setMode('mock');
-  setBLEStatus('off');
+  if (!offlineRecordingActive) setBLEStatus('off');
   ensureCharts();
 
   const gen = new MockGenerator();
