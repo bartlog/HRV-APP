@@ -1,14 +1,14 @@
 # EDF-Export in EDFbrowser prüfen
 
+> **Hinweis:** Der EDF+D-Export ist geplant und noch nicht verfügbar. Diese Anleitung beschreibt den zukünftigen Workflow.
+
 ---
 
-## Schritt 1 — EDF exportieren
+## Schritt 1 — EDF exportieren (geplant)
 
-1. **Sitzungen-Tab** → Session auswählen
+1. Tab **„Auswerten"** → Session auswählen
 2. **„EDF+D exportieren"** klicken
 3. Browser-Dialog: Speicherort wählen (`session_YYYYMMDD_HHMMSS.edf`)
-
-> **Fallback (Firefox/Safari):** Datei wird automatisch heruntergeladen.
 
 ---
 

@@ -6,23 +6,24 @@
 
 ## Schritt 1 — App öffnen
 
-`https://<user>.github.io/hrv-app/` in **Chrome** oder **Edge**
+`https://bartlog.github.io/HRV-APP/` in **Chrome** oder **Edge**
 
 ---
 
 ## Schritt 2 — H10 verbinden
 
-1. Klick auf **„H10 verbinden"** (oben rechts)
-2. Browser-Dialog → **„Polar H10 XXXXXXXX"** auswählen
-3. Badge: **LIVE — Verbunden** (grün)
+1. Tab **„Live"** öffnen
+2. Klick auf **„H10 verbinden"**
+3. Browser-Dialog → **„Polar H10 XXXXXXXX"** auswählen
+4. Badge: **LIVE — Verbunden** (grün)
 
 ---
 
 ## Schritt 3 — Live-Werte beobachten
 
-- **Dashboard-Tab:** RMSSD und Stress-Index erscheinen nach ~5 Herzschlägen
+- **Tab „Live":** RMSSD und Stress-Index erscheinen nach ~5 Herzschlägen
 - **LF/HF-Ratio** erscheint nach ~60 RR-Intervallen (≈ 1 Minute)
-- **EKG-Tab:** Live-Kurve mit erkennbaren R-Zacken
+- **EKG-Kurve** am unteren Ende des Live-Tabs — Live-Kurve mit erkennbaren R-Zacken
 
 ---
 
@@ -30,7 +31,9 @@
 
 - Klick auf **„Verbindung trennen"**
 - Session wird automatisch in IndexedDB gespeichert
-- **Sitzungen-Tab:** Session erscheint in der Liste → Export als CSV oder EDF möglich
+- Tab **„Auswerten":** Session erscheint in der Liste
+
+> **Hinweis:** CSV- und EDF-Export sind geplant und werden in einer der nächsten Versionen verfügbar sein.
 
 ---
 

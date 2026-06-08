@@ -149,7 +149,7 @@ Struktur auf einem H10 mit Firmware 4.2.0:
 4. SET_LOCAL_TIME → startRecording → BLE trennt sich
 5. H10 nimmt autonom auf (1×/Min grün blinkt)
 6. [24 Stunden später]
-7. App: "Synchronisieren" → BLE verbindet
+7. App: Tab "Aufzeichnen" → "Aufzeichnung beenden und speichern" → BLE verbindet
 8. stopRecording → SAMPLES.BPB herunterladen → REMOVE /1/
 9. BLE trennt sich
 ```

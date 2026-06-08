@@ -22,9 +22,9 @@
 
 ## Schritt 3 — Sitz-Check in der App
 
-1. App öffnen: `https://<user>.github.io/hrv-app/`
-2. **„H10 verbinden"** klicken → mit H10 verbinden
-3. Tab **„EKG"** öffnen
+1. App öffnen: `https://bartlog.github.io/HRV-APP/`
+2. Tab **„Live"** öffnen → **„H10 verbinden"** klicken → mit H10 verbinden
+3. EKG-Kurve im unteren Bereich des Live-Tabs beobachten
 
 R-Zacken müssen **klar und gleichmäßig** sichtbar sein.
 Wenn die Kurve flach oder stark verrauscht ist → Elektroden nachbefeuchten, Sitz prüfen.

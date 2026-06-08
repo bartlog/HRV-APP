@@ -15,10 +15,11 @@ LED blinkt **einmal grün** = H10 aktiv und sendet.
 
 **Schritt 2 — In der App verbinden**
 
-1. Klick auf **„H10 verbinden"** (grüner Button oben rechts)
-2. Browser öffnet einen Bluetooth-Gerätedialog
+1. Tab **„Live"** öffnen
+2. Klick auf **„H10 verbinden"**
+3. Browser öffnet einen Bluetooth-Gerätedialog
    *(Sicherheitsmechanismus: der Browser — nicht die App — fragt nach Erlaubnis)*
-3. **„Polar H10 XXXXXXXX"** in der Liste auswählen → **„Koppeln"**
+4. **„Polar H10 XXXXXXXX"** in der Liste auswählen → **„Koppeln"**
 
 **Schritt 3 — Verbindung bestätigen**
 
@@ -53,7 +54,7 @@ iOS Safari und Chrome für iOS unterstützen Web Bluetooth nicht (WebKit-Einschr
 **Schritt 2 — URL in Bluefy öffnen** *(nicht in Safari!)*
 
 1. Bluefy öffnen
-2. Adressleiste → `https://<user>.github.io/hrv-app/`
+2. Adressleiste → `https://bartlog.github.io/HRV-APP/`
 3. Seite lädt wie gewohnt
 
 **Schritt 3 — Bluetooth-Erlaubnis erteilen (einmalig)**

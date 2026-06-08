@@ -5,14 +5,14 @@
 ## Endnutzer (empfohlen)
 
 1. **Chrome** oder **Edge** (Version ≥ 89) öffnen
-2. URL aufrufen: `https://<user>.github.io/hrv-app/`
+2. URL aufrufen: `https://bartlog.github.io/HRV-APP/`
 3. Fertig — die App läuft vollständig im Browser
 
 ## Simulation ohne H10
 
 Zum Testen ohne Sensor:
 
-- Klick auf **„Simulation"** oben rechts → Badge zeigt **SIMULATION**
+- Tab **„Live"** öffnen → Klick auf **„Simulation"** → Badge zeigt **SIMULATION**
 - Synthetische EKG/RR/ACC-Daten laufen sofort
 - Alle Metriken (RMSSD, SDNN, Stress-Index) sind sichtbar
 
@@ -21,8 +21,8 @@ Zum Testen ohne Sensor:
 Voraussetzung: Node.js ≥ 18 + Git
 
 ```bash
-git clone https://github.com/<user>/hrv-app.git
-cd hrv-app
+git clone https://github.com/bartlog/HRV-APP.git
+cd HRV-APP
 npm install
 npm run dev   # → http://localhost:5173
 ```

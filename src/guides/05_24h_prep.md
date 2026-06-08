@@ -11,7 +11,7 @@ kein dauerhaftes Bluetooth nötig.
 
 H10 anlegen (→ Guide: H10 anlegen). PC/Laptop in BLE-Reichweite (~5 m).
 
-1. App → Tab **„Offline"** → **„Aufzeichnung starten"**
+1. App → Tab **„Aufzeichnen"** → **„Aufzeichnung starten"**
 2. Browser-Dialog → Polar H10 auswählen
 3. App zeigt: *„Aufzeichnung aktiv. H10 zeichnet autonom auf."*
 4. BLE-Verbindung trennt sich automatisch
@@ -35,20 +35,21 @@ H10 anlegen (→ Guide: H10 anlegen). PC/Laptop in BLE-Reichweite (~5 m).
 
 PC/Laptop in BLE-Reichweite:
 
-1. App öffnen → Tab **„Offline"** → **„Synchronisieren"**
+1. App öffnen → Tab **„Aufzeichnen"** → **„Aufzeichnung beenden und speichern"**
 2. Browser-Dialog → Polar H10 auswählen
 3. Fortschrittsbalken: *„Lade Session herunter…"*
 4. App berechnet HRV-Metriken → speichert in IndexedDB
-5. **Sitzungen-Tab:** Session erscheint mit korrekter Dauer
+5. Tab **„Auswerten":** Session erscheint mit korrekter Dauer
 
 ---
 
 ## Schritt 4 — Auswertung
 
-- **Sitzungen-Tab** → Session auswählen → **„Analysieren"**
-- Dashboard: RMSSD / SDNN / SI über die gesamte Messung
+- Tab **„Auswerten"** → Session auswählen → **„Analysieren"**
+- Diagramm: RMSSD und Stress-Index über die Messung (Uhrzeit auf x-Achse)
 - Schlaf-Phasen erkennbar: niedriger SI + hoher RMSSD
-- Export: **„CSV exportieren"** oder **„EDF+D exportieren"**
+
+> **Hinweis:** CSV- und EDF-Export sind geplant und werden in einer der nächsten Versionen verfügbar sein.
 
 ---
 
