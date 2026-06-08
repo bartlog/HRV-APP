@@ -71,6 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const { startedAt } = JSON.parse(savedRecording);
       offlineRecordingActive = true;
       setBLEStatus('recording');
+      updateRecordingButtons();
       const elapsedMin = Math.round((Date.now() - startedAt) / 60000);
       const statusEl = document.getElementById('offline-status');
       if (statusEl) {
@@ -227,6 +228,10 @@ async function startOfflineRecording() {
     alert('Eine Aufzeichnung läuft bereits. Bitte zuerst "Aufzeichnung beenden und speichern" klicken.');
     return;
   }
+  if (activeLiveSession) {
+    alert('Live-Verbindung aktiv. Bitte zuerst die Verbindung trennen, bevor eine Aufzeichnung gestartet wird.');
+    return;
+  }
   if (!navigator.bluetooth) {
     alert('Web Bluetooth nicht verfügbar. Bitte Chrome oder Edge ≥ 89 verwenden.');
     return;
@@ -252,7 +257,7 @@ async function startOfflineRecording() {
     offlineRecordingActive = true;
     sessionStorage.setItem('offlineRecording', JSON.stringify({ exerciseId, startedAt: Date.now() }));
     setBLEStatus('recording');
-    if (btnSync) btnSync.disabled = false;
+    updateRecordingButtons();
     log(`Aufzeichnung aktiv. H10 zeichnet autonom auf. ID: ${exerciseId}`);
   } catch (err) {
     if (err instanceof BlockerError && err.code === 'UNSYNCED_SESSION') {
@@ -320,7 +325,7 @@ async function syncOfflineSession() {
     offlineRecordingActive = false;
     sessionStorage.removeItem('offlineRecording');
     setBLEStatus('off');
-    if (btnStart) btnStart.disabled = false;
+    updateRecordingButtons();
     renderSessionList();
   } catch (err) {
     if (statusEl) { statusEl.textContent = `Fehler: ${err.message}`; statusEl.classList.remove('hidden'); }
@@ -1364,6 +1369,20 @@ async function connectedRecordingTest() {
     session.disconnect();
     if (btn) btn.disabled = false;
     if (statusEl) statusEl.textContent = lines.join('\n');
+  }
+}
+
+// --- Recording button state ---
+function updateRecordingButtons() {
+  const btnStart = document.getElementById('btn-start-recording');
+  const btnSync  = document.getElementById('btn-sync');
+  if (!btnStart || !btnSync) return;
+  if (offlineRecordingActive) {
+    btnStart.className = 'btn btn--secondary';
+    btnSync.className  = 'btn btn--primary';
+  } else {
+    btnStart.className = 'btn btn--primary';
+    btnSync.className  = 'btn btn--secondary';
   }
 }
 
