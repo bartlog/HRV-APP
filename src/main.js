@@ -1,7 +1,7 @@
 import { MockGenerator } from './mock/generator.js';
 import { rmssd, sdnn } from './hrv/time_domain.js';
 import { baevskySI } from './hrv/baevsky.js';
-import { filterRR } from './processing/artifact_filter.js';
+import { filterRR, filterBuffer } from './processing/artifact_filter.js';
 import { DashboardCharts } from './dashboard/charts.js';
 import { ECGViewer } from './dashboard/ecg_viewer.js';
 import { initTabs, setMode, setBLEStatus, updateMetrics, checkBrowserCompat, showCompatWarning } from './dashboard/ui.js';
@@ -305,22 +305,36 @@ async function syncOfflineSession() {
     const { sessionId, rrValues, rrWithTimestamps, durationH } = result;
 
     if (sessionId) {
-      await db.rrIntervals.bulkAdd(
-        rrWithTimestamps.map(({ timestamp, rrMs }) => ({ sessionId, timestamp, rrMs, artifactFlag: false }))
-      );
+      let syncPrev = null, artifactCount = 0;
+      const annotated = rrWithTimestamps.map(({ timestamp, rrMs }) => {
+        const filtered = filterRR(rrMs, syncPrev);
+        const isArtifact = filtered === null;
+        if (!isArtifact) syncPrev = filtered;
+        else artifactCount++;
+        return { sessionId, timestamp, rrMs, artifactFlag: isArtifact };
+      });
+      await db.rrIntervals.bulkAdd(annotated);
+      const cleanValues = annotated.filter(r => !r.artifactFlag).map(r => r.rrMs);
       const windowSize = 300;
-      for (let i = windowSize; i <= rrValues.length; i += windowSize) {
-        const w = rrValues.slice(i - windowSize, i);
+      for (let i = windowSize; i <= cleanValues.length; i += windowSize) {
+        const w = cleanValues.slice(i - windowSize, i);
         await saveHRVMetrics(sessionId, {
           rmssd: rmssd(w), sdnn: sdnn(w), si: baevskySI(w),
           lf: NaN, hf: NaN, lfhf: NaN, edr: NaN,
         });
       }
+      const total = rrWithTimestamps.length;
+      const artifactPct = total > 0 ? (artifactCount / total * 100).toFixed(1) : '0.0';
+      const quality = artifactCount / total <= 0.02 ? 'Sehr gut' :
+                      artifactCount / total <= 0.05 ? 'Gut' :
+                      artifactCount / total <= 0.10 ? 'Mittel' : 'Schlecht';
+      if (statusEl) statusEl.textContent =
+        `Synchronisiert: ${total} RR-Werte, ${artifactCount} Artefakte (${artifactPct}%), Signalqualität: ${quality} — ` +
+        `RMSSD ${Math.round(rmssd(cleanValues))} ms, SI ${Math.round(baevskySI(cleanValues))}`;
+    } else {
+      if (statusEl) statusEl.textContent =
+        `Synchronisiert: ${rrValues.length} RR-Werte, ${durationH} h`;
     }
-
-    if (statusEl) statusEl.textContent =
-      `Synchronisiert: ${rrValues.length} RR-Werte, ${durationH} h — ` +
-      `RMSSD ${Math.round(rmssd(rrValues))} ms, SI ${Math.round(baevskySI(rrValues))}`;
 
     offlineRecordingActive = false;
     sessionStorage.removeItem('offlineRecording');
@@ -398,7 +412,26 @@ async function analyzeSession(sessionId, panel) {
   panel.dataset.rendered = 'true';
 
   const rrRows = await db.rrIntervals.where('sessionId').equals(sessionId).sortBy('timestamp');
-  const rrValues = rrRows.map(r => r.rrMs);
+
+  // Use stored artifact flags if any beat is marked; otherwise re-run filter (backward compat for old sessions)
+  const hasArtifactMarks = rrRows.some(r => r.artifactFlag);
+  let filteredRows;
+  if (hasArtifactMarks) {
+    filteredRows = rrRows.filter(r => !r.artifactFlag);
+  } else {
+    let prev = null;
+    filteredRows = rrRows.filter(row => {
+      const ok = filterRR(row.rrMs, prev) !== null;
+      if (ok) prev = row.rrMs;
+      return ok;
+    });
+  }
+  const rrValues = filteredRows.map(r => r.rrMs);
+  const artifactCount = rrRows.length - filteredRows.length;
+  const artifactPct = rrRows.length > 0 ? (artifactCount / rrRows.length * 100).toFixed(1) : '0.0';
+  const qualityRatio = rrRows.length > 0 ? artifactCount / rrRows.length : 0;
+  const quality = qualityRatio <= 0.02 ? 'Sehr gut' : qualityRatio <= 0.05 ? 'Gut' : qualityRatio <= 0.10 ? 'Mittel' : 'Schlecht';
+  const qualityColor = qualityRatio <= 0.05 ? '#34d399' : qualityRatio <= 0.10 ? '#fbbf24' : '#f87171';
 
   if (rrValues.length === 0) {
     panel.innerHTML = '<p class="empty-state">Keine RR-Daten in der Datenbank gefunden.</p>';
@@ -418,13 +451,7 @@ async function analyzeSession(sessionId, panel) {
     const w = rrValues.slice(i - WIN, i);
     rmssdSeries.push(Math.round(rmssd(w)));
     siSeries.push(Math.round(baevskySI(w)));
-    timeLabels.push(new Date(rrRows[i - 1].timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
-  }
-
-  // Poincaré data (max 500 points)
-  const poincare = [];
-  for (let i = 0; i < Math.min(rrValues.length - 1, 500); i++) {
-    poincare.push({ x: rrValues[i], y: rrValues[i + 1] });
+    timeLabels.push(new Date(filteredRows[i - 1].timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
   }
 
   panel.innerHTML = `
@@ -433,6 +460,7 @@ async function analyzeSession(sessionId, panel) {
       <div class="analysis-stat"><div class="stat-label">Ø RMSSD</div><div class="stat-value">${wRmssd}<small> ms</small></div></div>
       <div class="analysis-stat"><div class="stat-label">Ø SDNN</div><div class="stat-value">${wSdnn}<small> ms</small></div></div>
       <div class="analysis-stat"><div class="stat-label">Ø Stress-Index</div><div class="stat-value">${wSi}</div></div>
+      <div class="analysis-stat"><div class="stat-label">Signalqualität</div><div class="stat-value" style="color:${qualityColor}">${quality}<small> (${artifactPct}%)</small></div></div>
     </div>
     <div class="analysis-charts">
       <div class="analysis-chart-wrap">
@@ -442,10 +470,6 @@ async function analyzeSession(sessionId, panel) {
       <div class="analysis-chart-wrap">
         <p class="chart-label">Stress-Index <span style="color:#a78bfa">■</span> — Ø je 50 Herzschläge</p>
         <canvas id="ac-si-${sessionId}"></canvas>
-      </div>
-      <div class="analysis-chart-wrap">
-        <p class="chart-label">Poincaré-Plot — RR[n] vs. RR[n+1] &nbsp;·&nbsp; enger Cluster = regelmäßig &nbsp;·&nbsp; breite Wolke = hohe Variabilität</p>
-        <canvas id="ac-poincare-${sessionId}"></canvas>
       </div>
     </div>`;
 
@@ -509,20 +533,6 @@ async function analyzeSession(sessionId, panel) {
     });
   }
 
-  new ChartAuto(document.getElementById(`ac-poincare-${sessionId}`), {
-    type: 'scatter',
-    data: {
-      datasets: [{ data: poincare, backgroundColor: 'rgba(79,142,247,.4)', pointRadius: 2 }],
-    },
-    options: {
-      responsive: true, animation: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        x: { ticks: { color: tickColor, font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'RR[n] ms', color: tickColor } },
-        y: { ticks: { color: tickColor, font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'RR[n+1] ms', color: tickColor } },
-      },
-    },
-  });
 }
 
 // --- PFTP channel test (Go/No-Go diagnostic) ---

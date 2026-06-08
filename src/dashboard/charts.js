@@ -4,7 +4,29 @@ Chart.register(LineController, LineElement, PointElement, LinearScale, CategoryS
 
 const CHART_MAX_POINTS = 300; // 5-min rolling window at 1-per-second
 
-function makeChart(canvasId, label, color) {
+const siZonesPlugin = {
+  id: 'siZones',
+  beforeDraw(chart) {
+    const { ctx, chartArea, scales: { y } } = chart;
+    if (!y || !chartArea) return;
+    const { left, right, top, bottom } = chartArea;
+    const zones = [
+      { min: 0,   max: 50,       color: 'rgba(52,211,153,0.13)' },
+      { min: 50,  max: 150,      color: 'rgba(251,191,36,0.10)' },
+      { min: 150, max: 300,      color: 'rgba(251,146,60,0.13)' },
+      { min: 300, max: Infinity, color: 'rgba(248,113,113,0.15)' },
+    ];
+    ctx.save();
+    for (const zone of zones) {
+      const yTop = zone.max === Infinity ? top : Math.max(top, y.getPixelForValue(zone.max));
+      const yBot = Math.min(bottom, y.getPixelForValue(zone.min));
+      if (yTop < yBot) { ctx.fillStyle = zone.color; ctx.fillRect(left, yTop, right - left, yBot - yTop); }
+    }
+    ctx.restore();
+  },
+};
+
+function makeChart(canvasId, label, color, extraPlugins = []) {
   const canvas = document.getElementById(canvasId);
   if (!canvas) return null;
   return new Chart(canvas, {
@@ -41,13 +63,14 @@ function makeChart(canvasId, label, color) {
         },
       },
     },
+    plugins: extraPlugins,
   });
 }
 
 export class DashboardCharts {
   constructor() {
     this._rmssdChart = makeChart('chart-rmssd', 'RMSSD (ms)', '#4f8ef7');
-    this._siChart    = makeChart('chart-si',    'Stress-Index', '#f87171');
+    this._siChart    = makeChart('chart-si',    'Stress-Index', '#f87171', [siZonesPlugin]);
   }
 
   addPoint(timestampMs, rmssd, si) {
