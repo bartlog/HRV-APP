@@ -64,6 +64,23 @@ document.addEventListener('DOMContentLoaded', () => {
   renderSessionList();
   document.querySelector('[data-tab="sessions"]')?.addEventListener('click', renderSessionList);
 
+  // Restore recording state after page refresh
+  const savedRecording = sessionStorage.getItem('offlineRecording');
+  if (savedRecording) {
+    try {
+      const { startedAt } = JSON.parse(savedRecording);
+      offlineRecordingActive = true;
+      setBLEStatus('recording');
+      document.getElementById('btn-start-recording')?.setAttribute('disabled', '');
+      const elapsedMin = Math.round((Date.now() - startedAt) / 60000);
+      const statusEl = document.getElementById('offline-status');
+      if (statusEl) {
+        statusEl.textContent = `Aufzeichnung läuft seit ${elapsedMin} Min. H10 zeichnet autonom auf.`;
+        statusEl.classList.remove('hidden');
+      }
+    } catch {}
+  }
+
   startMockSession();
 });
 
@@ -234,6 +251,7 @@ async function startOfflineRecording() {
     const exerciseId = Math.floor(Date.now() / 1000).toString(16).toUpperCase();
     await session.startRecording(exerciseId);
     offlineRecordingActive = true;
+    sessionStorage.setItem('offlineRecording', JSON.stringify({ exerciseId, startedAt: Date.now() }));
     setBLEStatus('recording');
     if (btnSync) btnSync.disabled = false;
     log(`Aufzeichnung aktiv. H10 zeichnet autonom auf. ID: ${exerciseId}`);
@@ -301,6 +319,7 @@ async function syncOfflineSession() {
       `RMSSD ${Math.round(rmssd(rrValues))} ms, SI ${Math.round(baevskySI(rrValues))}`;
 
     offlineRecordingActive = false;
+    sessionStorage.removeItem('offlineRecording');
     setBLEStatus('off');
     if (btnStart) btnStart.disabled = false;
     renderSessionList();
