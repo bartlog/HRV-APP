@@ -83,6 +83,7 @@ html, body {
 .ble-status { font-size: .8rem; color: var(--color-text-muted); }
 .ble-status--on { color: var(--color-success); }
 .ble-status--connecting { color: var(--color-warning); }
+.ble-status--recording { color: var(--color-accent); }
 
 /* --- Buttons --- */
 .btn {

@@ -17,6 +17,7 @@ import './app.css';
 let activeGenerator = null;
 let activeSessionId = null;
 let activeLiveSession = null;
+let offlineRecordingActive = false;
 let prevRR = null;
 const rrBuffer = [];
 const ecgLiveBuffer = [];
@@ -70,7 +71,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function startMockSession() {
   stopActiveSession();
   setMode('mock');
-  setBLEStatus('on');
+  setBLEStatus('off');
   ensureCharts();
 
   const gen = new MockGenerator();
@@ -128,6 +129,11 @@ async function startLiveSession() {
   // Wenn bereits verbunden → trennen
   if (activeLiveSession) {
     activeLiveSession.disconnect();
+    return;
+  }
+
+  if (offlineRecordingActive) {
+    alert('Eine Offline-Aufzeichnung läuft. Bitte zuerst "Aufzeichnung beenden und speichern" ausführen.');
     return;
   }
 
@@ -201,12 +207,17 @@ async function startLiveSession() {
 
 // --- Offline recording (Phase 1a) ---
 async function startOfflineRecording() {
+  if (offlineRecordingActive) {
+    alert('Eine Aufzeichnung läuft bereits. Bitte zuerst "Aufzeichnung beenden und speichern" klicken.');
+    return;
+  }
   if (!navigator.bluetooth) {
     alert('Web Bluetooth nicht verfügbar. Bitte Chrome oder Edge ≥ 89 verwenden.');
     return;
   }
   const statusEl = document.getElementById('offline-status');
   const btn = document.getElementById('btn-start-recording');
+  const btnSync = document.getElementById('btn-sync');
   if (btn) btn.disabled = true;
 
   function log(msg) {
@@ -222,6 +233,9 @@ async function startOfflineRecording() {
     // Short hex timestamp (8 chars) — H10 FAT filesystem has trouble with long/underscore IDs
     const exerciseId = Math.floor(Date.now() / 1000).toString(16).toUpperCase();
     await session.startRecording(exerciseId);
+    offlineRecordingActive = true;
+    setBLEStatus('recording');
+    if (btnSync) btnSync.disabled = false;
     log(`Aufzeichnung aktiv. H10 zeichnet autonom auf. ID: ${exerciseId}`);
   } catch (err) {
     if (err instanceof BlockerError && err.code === 'UNSYNCED_SESSION') {
@@ -255,6 +269,7 @@ async function syncOfflineSession() {
   }
   const statusEl = document.getElementById('offline-status');
   const btn = document.getElementById('btn-sync');
+  const btnStart = document.getElementById('btn-start-recording');
   if (btn) btn.disabled = true;
 
   const session = new PFTPSession(({ bytes }) => {
@@ -285,6 +300,9 @@ async function syncOfflineSession() {
       `Synchronisiert: ${rrValues.length} RR-Werte, ${durationH} h — ` +
       `RMSSD ${Math.round(rmssd(rrValues))} ms, SI ${Math.round(baevskySI(rrValues))}`;
 
+    offlineRecordingActive = false;
+    setBLEStatus('off');
+    if (btnStart) btnStart.disabled = false;
     renderSessionList();
   } catch (err) {
     if (statusEl) { statusEl.textContent = `Fehler: ${err.message}`; statusEl.classList.remove('hidden'); }

@@ -72,9 +72,10 @@ export function setBLEStatus(state) {
   const el = document.getElementById('ble-status');
   if (!el) return;
   const states = {
-    off:         { text: '⬤ Getrennt',     cls: '' },
-    connecting:  { text: '⬤ Verbinde...',  cls: 'ble-status--connecting' },
-    on:          { text: '⬤ Verbunden',    cls: 'ble-status--on' },
+    off:        { text: '⬤ Getrennt',            cls: '' },
+    connecting: { text: '⬤ Verbinde...',         cls: 'ble-status--connecting' },
+    on:         { text: '⬤ Verbunden',           cls: 'ble-status--on' },
+    recording:  { text: '⬤ Aufzeichnung läuft', cls: 'ble-status--recording' },
   };
   const s = states[state] ?? states.off;
   el.textContent = s.text;
