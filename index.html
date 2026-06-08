@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HRV Monitor — Polar H10</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/src/app.css" />
+</head>
+<body>
+
+<!-- Browser compatibility warning (shown if Web Bluetooth unavailable) -->
+<div id="compat-warning" class="compat-warning hidden">
+  <div class="compat-warning__inner">
+    <h2>Browser nicht unterstützt</h2>
+    <p id="compat-message"></p>
+    <ul>
+      <li><strong>Windows / macOS / Android:</strong> Chrome oder Edge ≥ 89 verwenden</li>
+      <li><strong>iPhone / iPad:</strong> <a href="https://apps.apple.com/app/bluefy/id1492822055" target="_blank">Bluefy</a> aus dem App Store installieren, dann diese URL in Bluefy öffnen</li>
+    </ul>
+    <button id="compat-dismiss" class="btn btn--secondary">Trotzdem fortfahren (Mock-Modus)</button>
+  </div>
+</div>
+
+<!-- App shell -->
+<div id="app">
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header__brand">
+      <span class="header__logo">HRV</span>
+      <span class="header__title">Monitor</span>
+      <span id="mode-badge" class="mode-badge mode-badge--mock">SIMULATION</span>
+    </div>
+    <div class="header__controls">
+      <span id="ble-status" class="ble-status ble-status--off">&#9679; Getrennt</span>
+    </div>
+  </header>
+
+  <!-- Tab navigation -->
+  <nav class="tabs">
+    <button class="tab tab--active" data-tab="offline">Aufzeichnen</button>
+    <button class="tab" data-tab="sessions">Auswerten</button>
+    <button class="tab" data-tab="dashboard">Live</button>
+    <button class="tab" data-tab="guides">Anleitungen</button>
+  </nav>
+
+  <!-- Tab: Aufzeichnen -->
+  <section id="tab-offline" class="tab-content tab-content--active">
+    <h2 class="section-title">24h Offline-Aufzeichnung</h2>
+    <div class="offline-actions">
+      <div class="offline-action-card">
+        <h3>Aufzeichnung starten</h3>
+        <p>H10 speichert RR-Intervalle intern für 20–30 Stunden. Kein dauerhaftes Bluetooth nötig.</p>
+        <button id="btn-start-recording" class="btn btn--primary">Aufzeichnung starten</button>
+      </div>
+      <div class="offline-action-card">
+        <h3>Aufzeichnung beenden und speichern</h3>
+        <p>Daten vom H10 herunterladen, HRV-Metriken berechnen und lokal speichern.</p>
+        <button id="btn-sync" class="btn btn--secondary">Aufzeichnung beenden und speichern</button>
+      </div>
+    </div>
+    <div id="offline-status" class="offline-status hidden"></div>
+  </section>
+
+  <!-- Tab: Auswerten -->
+  <section id="tab-sessions" class="tab-content">
+    <h2 class="section-title">Gespeicherte Aufzeichnungen</h2>
+    <div id="session-list" class="session-list">
+      <p class="empty-state">Noch keine Aufzeichnungen gespeichert.</p>
+    </div>
+  </section>
+
+  <!-- Tab: Live -->
+  <section id="tab-dashboard" class="tab-content">
+    <div class="live-controls">
+      <button id="btn-connect" class="btn btn--primary">H10 verbinden</button>
+      <button id="btn-mock" class="btn btn--ghost">Simulation</button>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <div class="metric-card__label">RMSSD</div>
+        <div id="metric-rmssd" class="metric-card__value">--</div>
+        <div class="metric-card__unit">ms</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card__label">SDNN</div>
+        <div id="metric-sdnn" class="metric-card__value">--</div>
+        <div class="metric-card__unit">ms</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card__label">Stress-Index</div>
+        <div id="metric-si" class="metric-card__value">--</div>
+        <div class="metric-card__unit">SI</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card__label">LF/HF</div>
+        <div id="metric-lfhf" class="metric-card__value">--</div>
+        <div class="metric-card__unit">ratio</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card__label">Herzfrequenz</div>
+        <div id="metric-hr" class="metric-card__value">--</div>
+        <div class="metric-card__unit">bpm</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-card__label">Atemfrequenz (EDR)</div>
+        <div id="metric-edr" class="metric-card__value">--</div>
+        <div class="metric-card__unit">/min</div>
+      </div>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-rmssd"></canvas>
+    </div>
+    <div class="chart-container">
+      <canvas id="chart-si"></canvas>
+    </div>
+    <div class="ecg-section">
+      <div class="ecg-controls">
+        <label for="ecg-slider">Position</label>
+        <input type="range" id="ecg-slider" min="0" max="0" value="0" step="10" />
+        <span id="ecg-time-label">00:00</span>
+      </div>
+      <canvas id="ecg-canvas" class="ecg-canvas"></canvas>
+      <p class="ecg-hint" id="ecg-hint">Starte eine Session um EKG-Daten zu sehen.</p>
+    </div>
+  </section>
+
+  <!-- Tab: Anleitungen -->
+  <section id="tab-guides" class="tab-content">
+    <div class="guides-layout">
+      <nav class="guides-nav">
+        <button class="guide-nav-btn guide-nav-btn--active" data-guide="00_installation">Installation</button>
+        <button class="guide-nav-btn" data-guide="01_bluetooth_pairing">Bluetooth</button>
+        <button class="guide-nav-btn" data-guide="02_wearing_h10">H10 anlegen</button>
+        <button class="guide-nav-btn" data-guide="03_first_session">Erste Messung</button>
+        <button class="guide-nav-btn" data-guide="04_edf_check">EDF prüfen</button>
+        <button class="guide-nav-btn" data-guide="05_24h_prep">24h Messung</button>
+        <button class="guide-nav-btn" data-guide="06_h10_troubleshooting">H10 Troubleshoot</button>
+        <button class="guide-nav-btn" data-guide="07_datenschutz">Datenschutz & Daten</button>
+      </nav>
+      <article id="guide-content" class="guide-content">
+        <p>Anleitung wird geladen...</p>
+      </article>
+    </div>
+  </section>
+
+</div><!-- #app -->
+
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>
