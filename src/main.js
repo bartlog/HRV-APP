@@ -353,7 +353,6 @@ async function renderSessionList() {
     return `<div class="session-item">
       <div class="session-card">
         <div class="session-meta">
-          <span class="session-label session-label--offline">Offline</span>
           <span class="session-date">${date}</span>
           <span class="session-stat">${duration}</span>
           <span class="session-stat">${rrCount}</span>
@@ -431,42 +430,82 @@ async function analyzeSession(sessionId, panel) {
   panel.innerHTML = `
     <div class="analysis-stats">
       <div class="analysis-stat"><div class="stat-label">Ø HR</div><div class="stat-value">${avgBpm}<small> bpm</small></div></div>
-      <div class="analysis-stat"><div class="stat-label">RMSSD</div><div class="stat-value">${wRmssd}<small> ms</small></div></div>
-      <div class="analysis-stat"><div class="stat-label">SDNN</div><div class="stat-value">${wSdnn}<small> ms</small></div></div>
-      <div class="analysis-stat"><div class="stat-label">Stress-Index</div><div class="stat-value">${wSi}</div></div>
+      <div class="analysis-stat"><div class="stat-label">Ø RMSSD</div><div class="stat-value">${wRmssd}<small> ms</small></div></div>
+      <div class="analysis-stat"><div class="stat-label">Ø SDNN</div><div class="stat-value">${wSdnn}<small> ms</small></div></div>
+      <div class="analysis-stat"><div class="stat-label">Ø Stress-Index</div><div class="stat-value">${wSi}</div></div>
     </div>
     <div class="analysis-charts">
       <div class="analysis-chart-wrap">
-        <p class="chart-label">RMSSD <span style="color:#4f8ef7">■</span> &amp; Stress-Index <span style="color:#a78bfa">■</span> (50-Schlag-Fenster)</p>
+        <p class="chart-label">RMSSD <span style="color:#4f8ef7">■</span> — Ø je 50 Herzschläge</p>
         <canvas id="ac-rmssd-${sessionId}"></canvas>
       </div>
       <div class="analysis-chart-wrap">
-        <p class="chart-label">Poincaré-Plot</p>
+        <p class="chart-label">Stress-Index <span style="color:#a78bfa">■</span> — Ø je 50 Herzschläge</p>
+        <canvas id="ac-si-${sessionId}"></canvas>
+      </div>
+      <div class="analysis-chart-wrap">
+        <p class="chart-label">Poincaré-Plot — RR[n] vs. RR[n+1] &nbsp;·&nbsp; enger Cluster = regelmäßig &nbsp;·&nbsp; breite Wolke = hohe Variabilität</p>
         <canvas id="ac-poincare-${sessionId}"></canvas>
       </div>
     </div>`;
 
   const gridColor = '#2a2d3e', tickColor = '#7c8db0';
 
+  // Inline plugin: colored SI zones (beforeDraw, no extra package needed)
+  const siZonesPlugin = {
+    id: 'siZones',
+    beforeDraw(chart) {
+      const { ctx, chartArea, scales: { y } } = chart;
+      if (!y || !chartArea) return;
+      const { left, right, top, bottom } = chartArea;
+      const zones = [
+        { min: 0,   max: 50,       color: 'rgba(52,211,153,0.13)' },  // grün — sehr gut
+        { min: 50,  max: 150,      color: 'rgba(251,191,36,0.10)' },  // gelb — normal
+        { min: 150, max: 300,      color: 'rgba(251,146,60,0.13)' },  // orange — erhöht
+        { min: 300, max: Infinity, color: 'rgba(248,113,113,0.15)' }, // rot — hoch
+      ];
+      ctx.save();
+      for (const zone of zones) {
+        const yTop = zone.max === Infinity ? top : Math.max(top, y.getPixelForValue(zone.max));
+        const yBot = Math.min(bottom, y.getPixelForValue(zone.min));
+        if (yTop < yBot) { ctx.fillStyle = zone.color; ctx.fillRect(left, yTop, right - left, yBot - yTop); }
+      }
+      ctx.restore();
+    },
+  };
+
   if (rmssdSeries.length > 1) {
     new ChartAuto(document.getElementById(`ac-rmssd-${sessionId}`), {
       type: 'line',
       data: {
         labels: timeLabels,
-        datasets: [
-          { label: 'RMSSD', data: rmssdSeries, borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,.08)', tension: 0.35, pointRadius: 3, fill: true, yAxisID: 'y' },
-          { label: 'SI',    data: siSeries,    borderColor: '#a78bfa', backgroundColor: 'transparent',            tension: 0.35, pointRadius: 3, fill: false, yAxisID: 'y1' },
-        ],
+        datasets: [{ label: 'RMSSD', data: rmssdSeries, borderColor: '#4f8ef7', backgroundColor: 'rgba(79,142,247,.08)', tension: 0.35, pointRadius: 3, fill: true }],
       },
       options: {
         responsive: true, animation: false,
         plugins: { legend: { display: false } },
         scales: {
-          x:  { ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
-          y:  { position: 'left',  ticks: { color: '#4f8ef7', font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'RMSSD ms', color: '#4f8ef7' } },
-          y1: { position: 'right', ticks: { color: '#a78bfa', font: { size: 10 } }, grid: { drawOnChartArea: false }, title: { display: true, text: 'Stress-Index', color: '#a78bfa' } },
+          x: { ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
+          y: { ticks: { color: '#4f8ef7', font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'ms', color: '#4f8ef7' } },
         },
       },
+    });
+
+    new ChartAuto(document.getElementById(`ac-si-${sessionId}`), {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: [{ label: 'SI', data: siSeries, borderColor: '#a78bfa', backgroundColor: 'transparent', tension: 0.35, pointRadius: 3, fill: false }],
+      },
+      options: {
+        responsive: true, animation: false,
+        plugins: { legend: { display: false }, siZones: {} },
+        scales: {
+          x: { ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
+          y: { ticks: { color: '#a78bfa', font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'SI', color: '#a78bfa' } },
+        },
+      },
+      plugins: [siZonesPlugin],
     });
   }
 
