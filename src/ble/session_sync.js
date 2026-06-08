@@ -321,7 +321,7 @@ export class PFTPSession {
     await this.removeExercise(exerciseId);
     this.disconnect();
 
-    if (pending) await db.sessions.update(pending.id, { synced: true, rrCount: rrValues.length });
+    if (pending) await db.sessions.update(pending.id, { synced: true, rrCount: rrValues.length, syncTime: Date.now() });
 
     log(t('sync.done'));
     return { exerciseId, sessionId: pending?.id, rrValues, rrWithTimestamps, durationH };

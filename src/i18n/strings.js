@@ -22,6 +22,8 @@ export const strings = {
     'sessions.export': 'CSV',
     'sessions.delete.title': 'Sitzung löschen',
     'sessions.no_data': 'Keine RR-Daten in der Datenbank gefunden.',
+    'sessions.started': 'Start',
+    'sessions.sync_label': 'Sync',
     // Live tab
     'live.connect': 'H10 verbinden',
     'live.disconnect': 'Verbindung trennen',
@@ -134,6 +136,8 @@ export const strings = {
     'sessions.export': 'CSV',
     'sessions.delete.title': 'Delete session',
     'sessions.no_data': 'No RR data found in database.',
+    'sessions.started': 'Start',
+    'sessions.sync_label': 'Synced',
     // Live tab
     'live.connect': 'Connect H10',
     'live.disconnect': 'Disconnect',

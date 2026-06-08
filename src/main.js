@@ -400,14 +400,17 @@ async function renderSessionList() {
     container.innerHTML = `<p class="empty-state">${t('sessions.empty')}</p>`;
     return;
   }
+  const locale = getLang() === 'en' ? 'en-US' : 'de-DE';
   container.innerHTML = sessions.map(s => {
-    const date = new Date(s.startTime).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' });
-    const duration = s.durationH != null ? `${s.durationH} h` : '—';
-    const rrCount = s.rrCount != null ? `${s.rrCount} RR` : '—';
+    const startDate = new Date(s.startTime).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' });
+    const syncDate  = s.syncTime ? new Date(s.syncTime).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' }) : '—';
+    const duration  = s.durationH != null ? `${s.durationH} h` : '—';
+    const rrCount   = s.rrCount != null ? `${s.rrCount} RR` : '—';
     return `<div class="session-item">
       <div class="session-card">
         <div class="session-meta">
-          <span class="session-date">${date}</span>
+          <span class="session-date"><span class="session-meta-label">${t('sessions.started')}:</span> ${startDate}</span>
+          <span class="session-date"><span class="session-meta-label">${t('sessions.sync_label')}:</span> ${syncDate}</span>
           <span class="session-stat">${duration}</span>
           <span class="session-stat">${rrCount}</span>
         </div>
@@ -451,7 +454,10 @@ async function analyzeSession(sessionId, panel) {
   if (panel.dataset.rendered) return;
   panel.dataset.rendered = 'true';
 
-  const rrRows = await db.rrIntervals.where('sessionId').equals(sessionId).sortBy('timestamp');
+  const [session, rrRows] = await Promise.all([
+    db.sessions.get(sessionId),
+    db.rrIntervals.where('sessionId').equals(sessionId).sortBy('timestamp'),
+  ]);
 
   // Use stored artifact flags if any beat is marked; otherwise re-run filter (backward compat for old sessions)
   const hasArtifactMarks = rrRows.some(r => r.artifactFlag);
@@ -498,7 +504,13 @@ async function analyzeSession(sessionId, panel) {
     ? Math.round(siSeries.reduce((a, b) => a + b, 0) / siSeries.length)
     : Math.round(baevskySI(rrValues));
 
+  const locale = getLang() === 'en' ? 'en-US' : 'de-DE';
+  const fmtDt = ts => ts ? new Date(ts).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' }) : '—';
   panel.innerHTML = `
+    <div class="analysis-header">
+      <span><span class="session-meta-label">${t('sessions.started')}:</span> ${fmtDt(session?.startTime)}</span>
+      <span><span class="session-meta-label">${t('sessions.sync_label')}:</span> ${fmtDt(session?.syncTime)}</span>
+    </div>
     <div class="analysis-stats">
       <div class="analysis-stat"><div class="stat-label">${t('stat.hr')}</div><div class="stat-value">${avgBpm}<small> bpm</small></div></div>
       <div class="analysis-stat"><div class="stat-label">${t('stat.rmssd')}</div><div class="stat-value">${wRmssd}<small> ms</small></div></div>

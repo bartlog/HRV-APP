@@ -276,6 +276,13 @@ html, body {
   overflow: hidden;
 }
 .session-analysis.hidden { display: none; }
+.analysis-header {
+  display: flex; gap: 1.5rem; flex-wrap: wrap;
+  padding: .65rem 1rem .4rem;
+  font-size: .8rem; color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+.session-meta-label { color: var(--color-text-muted); opacity: .65; }
 .analysis-stats {
   display: flex; gap: 1.25rem; flex-wrap: wrap;
   padding: 1rem 1rem .75rem;
