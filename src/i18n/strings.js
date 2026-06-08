@@ -38,8 +38,8 @@ export const strings = {
     'metric.edr': 'Atemfrequenz (EDR)',
     'metric.window_note': 'Ø der letzten 300 Herzschläge',
     // ECG
-    'ecg.label': 'EKG — Echtzeit',
-    'ecg.hint': 'Starte eine Session um EKG-Daten zu sehen.',
+    'ecg.label': 'EKG (nur Simulation)',
+    'ecg.hint': 'EKG-Daten werden nur in der Simulation dargestellt.',
     // Guide nav
     'guide.nav.00': 'Installation',
     'guide.nav.01': 'Bluetooth',
@@ -152,8 +152,8 @@ export const strings = {
     'metric.edr': 'Breathing Rate (EDR)',
     'metric.window_note': 'Avg of last 300 heartbeats',
     // ECG
-    'ecg.label': 'ECG — Live',
-    'ecg.hint': 'Start a session to see ECG data.',
+    'ecg.label': 'ECG (Simulation only)',
+    'ecg.hint': 'ECG data is only available in simulation mode.',
     // Guide nav
     'guide.nav.00': 'Installation',
     'guide.nav.01': 'Bluetooth',

@@ -222,6 +222,11 @@ async function startLiveSession() {
     setBLEStatus('on');
     charts?.reset();
     updateMetrics({});
+    // ECG is simulation-only — clear buffer and canvas for live connections
+    ecgLiveBuffer.length = 0;
+    ecgViewer?.clear();
+    const ecgHint = document.getElementById('ecg-hint');
+    if (ecgHint) ecgHint.style.display = '';
     if (btn) { btn.textContent = t('live.disconnect'); btn.dataset.connectState = 'connected'; btn.disabled = false; }
 
     let beatCount = 0;
