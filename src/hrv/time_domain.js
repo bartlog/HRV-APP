@@ -19,3 +19,10 @@ export function sdnn(rrArray) {
   const variance = rrArray.reduce((sum, rr) => sum + (rr - mean) ** 2, 0) / rrArray.length;
   return Math.sqrt(variance);
 }
+
+export function median(arr) {
+  if (arr.length === 0) return NaN;
+  const sorted = [...arr].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
+}

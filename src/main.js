@@ -1,5 +1,5 @@
 import { MockGenerator } from './mock/generator.js';
-import { rmssd, sdnn } from './hrv/time_domain.js';
+import { rmssd, sdnn, median } from './hrv/time_domain.js';
 import { baevskySI } from './hrv/baevsky.js';
 import { filterRR, filterBuffer } from './processing/artifact_filter.js';
 import { DashboardCharts } from './dashboard/charts.js';
@@ -371,9 +371,15 @@ async function syncOfflineSession() {
       const quality = qualityRatioSync <= 0.02 ? t('quality.very_good') :
                       qualityRatioSync <= 0.05 ? t('quality.good') :
                       qualityRatioSync <= 0.10 ? t('quality.medium') : t('quality.bad');
+      const WIN_SYNC = 50;
+      const siWindowsSync = [];
+      for (let i = WIN_SYNC; i <= cleanValues.length; i += WIN_SYNC) {
+        siWindowsSync.push(baevskySI(cleanValues.slice(i - WIN_SYNC, i)));
+      }
+      const siSync = siWindowsSync.length > 0 ? Math.round(median(siWindowsSync)) : Math.round(baevskySI(cleanValues));
       if (statusEl) statusEl.textContent = tf('status.synced', {
         total, artifacts: artifactCount, pct: artifactPct, quality,
-        rmssd: Math.round(rmssd(cleanValues)), si: Math.round(baevskySI(cleanValues)),
+        rmssd: Math.round(rmssd(cleanValues)), si: siSync,
       });
     } else {
       if (statusEl) statusEl.textContent = tf('status.synced_no_session', {
@@ -511,9 +517,9 @@ async function analyzeSession(sessionId, panel) {
     timeLabels.push(new Date(filteredRows[i - 1].timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
   }
 
-  // SI average = mean of windowed series (baevskySI over the full array is unreliable for long recordings)
+  // SI average = median of windowed series — robust against movement/activity spikes
   const wSi = siSeries.length > 0
-    ? Math.round(siSeries.reduce((a, b) => a + b, 0) / siSeries.length)
+    ? Math.round(median(siSeries))
     : Math.round(baevskySI(rrValues));
 
   const locale = getLang() === 'en' ? 'en-US' : 'de-DE';
