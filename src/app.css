@@ -58,6 +58,8 @@ html, body {
 .header {
   display: flex; align-items: center; justify-content: space-between;
   padding: .75rem 1.25rem;
+  padding-left: max(1.25rem, env(safe-area-inset-left));
+  padding-right: max(1.25rem, env(safe-area-inset-right));
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border);
   position: sticky; top: 0; z-index: 10;
@@ -91,6 +93,7 @@ html, body {
   padding: .45rem 1rem; border-radius: var(--radius-sm);
   border: 1px solid transparent; cursor: pointer;
   transition: background var(--transition), color var(--transition);
+  min-height: 44px;
 }
 .btn--primary { background: var(--color-accent); color: #fff; }
 .btn--primary:hover { background: var(--color-accent-hover); }
@@ -112,6 +115,7 @@ html, body {
   padding: .35rem .9rem; border-radius: var(--radius-sm);
   background: none; border: none; color: var(--color-text-muted); cursor: pointer;
   white-space: nowrap; transition: color var(--transition), background var(--transition);
+  min-height: 44px;
 }
 .tab:hover { color: var(--color-text); }
 .tab--active { color: var(--color-accent); background: rgba(79,142,247,.12); }
@@ -323,9 +327,48 @@ html, body {
 .lang-btn--active { color: var(--color-accent); border-color: rgba(79,142,247,.4); }
 
 /* --- Responsive --- */
+body { padding-bottom: env(safe-area-inset-bottom); }
+
 @media (max-width: 640px) {
   .header__title { display: none; }
   .guides-layout { grid-template-columns: 1fr; }
   .guides-nav { flex-direction: row; overflow-x: auto; }
   .metric-card__value { font-size: 1.4rem; }
+  .live-controls { flex-direction: column; }
+  .live-controls .btn { width: 100%; justify-content: center; }
+  .analysis-stats { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .chart-container { height: 160px; }
+  .session-card { flex-direction: column; align-items: flex-start; gap: .5rem; }
+  .session-actions { align-self: flex-end; }
 }
+
+@media (max-width: 380px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .tab { font-size: .75rem; padding: .35rem .6rem; }
+  .tab-content { padding: .75rem; }
+}
+
+/* --- iOS Bluefy onboarding steps --- */
+.compat-steps { list-style: none; padding: 0; margin: 1rem 0 1.5rem; display: flex; flex-direction: column; gap: .85rem; }
+.compat-step { display: flex; align-items: flex-start; gap: .75rem; }
+.compat-step__num {
+  background: var(--color-accent); color: #fff; border-radius: 50%;
+  width: 24px; height: 24px; min-width: 24px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; font-weight: 700;
+}
+.compat-step__body { display: flex; flex-direction: column; gap: .3rem; padding-top: 2px; }
+.compat-step__label { font-size: .9rem; color: var(--color-text); }
+.compat-url {
+  font-family: var(--font-mono); font-size: .72rem;
+  color: var(--color-text-muted); word-break: break-all;
+  background: rgba(255,255,255,.05); padding: .2rem .4rem; border-radius: 3px;
+}
+.btn-copy-url {
+  font-size: .75rem; padding: .2rem .6rem; border-radius: var(--radius-sm);
+  background: rgba(79,142,247,.15); border: 1px solid rgba(79,142,247,.3);
+  color: var(--color-accent); cursor: pointer; align-self: flex-start;
+  font-family: var(--font-sans); font-weight: 600;
+  transition: background var(--transition);
+}
+.btn-copy-url:hover { background: rgba(79,142,247,.3); }

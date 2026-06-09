@@ -28,13 +28,54 @@ export function checkBrowserCompat() {
 
 export function showCompatWarning(messageKey) {
   const el = document.getElementById('compat-warning');
-  const msg = document.getElementById('compat-message');
-  if (msg) msg.textContent = t(messageKey);
+  if (!el) return;
   if (el) el.dataset.compatKey = messageKey;
-  el?.classList.remove('hidden');
 
+  if (messageKey === 'compat.ios') {
+    const url = window.location.href;
+    el.querySelector('.compat-warning__inner').innerHTML = `
+      <h2>${t('compat.title')}</h2>
+      <p>${t('compat.ios')}</p>
+      <ol class="compat-steps">
+        <li class="compat-step">
+          <span class="compat-step__num">1</span>
+          <div class="compat-step__body">
+            <span class="compat-step__label">${t('compat.ios.step1')}</span>
+            <a href="https://apps.apple.com/app/bluefy/id1492822055" target="_blank" rel="noopener">${t('compat.ios.appstore')} ↗</a>
+          </div>
+        </li>
+        <li class="compat-step">
+          <span class="compat-step__num">2</span>
+          <div class="compat-step__body">
+            <span class="compat-step__label">${t('compat.ios.step2')}</span>
+            <span class="compat-url">${url}</span>
+            <button class="btn-copy-url" id="btn-copy-url">${t('compat.ios.copy')}</button>
+          </div>
+        </li>
+        <li class="compat-step">
+          <span class="compat-step__num">3</span>
+          <div class="compat-step__body">
+            <span class="compat-step__label">${t('compat.ios.step3')}</span>
+          </div>
+        </li>
+      </ol>
+      <button id="compat-dismiss" class="btn btn--secondary">${t('compat.dismiss')}</button>
+    `;
+    document.getElementById('btn-copy-url')?.addEventListener('click', async (e) => {
+      try {
+        await navigator.clipboard.writeText(url);
+        e.target.textContent = t('compat.ios.copied');
+        setTimeout(() => { e.target.textContent = t('compat.ios.copy'); }, 2000);
+      } catch {}
+    });
+  } else {
+    const msg = document.getElementById('compat-message');
+    if (msg) msg.textContent = t(messageKey);
+  }
+
+  el.classList.remove('hidden');
   document.getElementById('compat-dismiss')?.addEventListener('click', () => {
-    el?.classList.add('hidden');
+    el.classList.add('hidden');
   }, { once: true });
 }
 
