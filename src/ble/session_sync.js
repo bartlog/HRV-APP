@@ -281,9 +281,13 @@ export class PFTPSession {
     log(t('sync.stopping'));
     try {
       await this.stopRecording();
+    } catch (e) {
+      this._log(`Stop warning: ${e.message}`);
+    } finally {
+      // If we reached here, we're connected — H10 is either stopped or was already stopped
       this._recordingStopped = true;
       await new Promise(r => setTimeout(r, 3000));
-    } catch (e) { this._log(`Stop warning: ${e.message}`); }
+    }
 
     let exercises = await this.listExercises();
 
@@ -305,9 +309,21 @@ export class PFTPSession {
 
     const exerciseId = exercises[0];
     log(tf('sync.loading', { id: exerciseId }));
-    const rrValues = await this.fetchExercise(exerciseId);
+    let rrValues;
+    try {
+      rrValues = await this.fetchExercise(exerciseId);
+    } catch (e) {
+      // No data files found — exercise is empty. Clean it up so next sync won't re-try it.
+      this._log(`fetchExercise failed (${e.message}) — removing empty exercise dir`);
+      try { await this.removeExercise(exerciseId); } catch {}
+      this.disconnect();
+      throw e;
+    }
 
     if (rrValues.length < 10) {
+      // Too few RR values — likely H10 not worn. Clean up the useless exercise.
+      this._log(`Only ${rrValues.length} RR values — removing exercise dir`);
+      try { await this.removeExercise(exerciseId); } catch {}
       this.disconnect();
       throw new Error(tf('sync.too_few_rr', { count: rrValues.length }));
     }
