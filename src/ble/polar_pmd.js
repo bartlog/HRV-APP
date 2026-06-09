@@ -297,14 +297,15 @@ export function parseExerciseList(bytes) {
   return entries;
 }
 
-// Parse SAMPLES.BPB: outer proto → field 28 → field 1 → packed varint RR intervals in ms.
-// Verified format from H10 firmware 4.2.0 autonomous recording output.
+// Parse SAMPLES.BPB: outer proto → field 28 (repeated) → field 1 → packed varint RR in ms.
+// Collects from ALL field-28 blocks (long recordings have multiple).
 function _parseSamplesBpbRR(bytes) {
   const readVarint = (arr, pos) => {
     let val = 0, shift = 0;
     while (pos < arr.length) { const b = arr[pos++]; val |= (b & 0x7f) << shift; if (!(b & 0x80)) break; shift += 7; }
     return { val, pos };
   };
+  const allRR = [];
   let i = 0;
   while (i < bytes.length) {
     let { val: tag, pos: i2 } = readVarint(bytes, i); i = i2;
@@ -320,12 +321,10 @@ function _parseSamplesBpbRR(bytes) {
             let { val: dLen, pos: i5 } = readVarint(bytes, i); i = i5;
             if (iField === 1 && dLen > 0) {
               const dataEnd = i + dLen;
-              const rr = [];
               while (i < dataEnd) {
                 let { val: v, pos: i6 } = readVarint(bytes, i); i = i6;
-                if (v >= 300 && v <= 2500) rr.push(v);
+                if (v >= 300 && v <= 2500) allRR.push(v);
               }
-              if (rr.length > 0) return rr;
             } else { i += dLen; }
           } else if (iWire === 0) { let { pos: ip } = readVarint(bytes, i); i = ip; }
           else { i++; }
@@ -335,7 +334,7 @@ function _parseSamplesBpbRR(bytes) {
     } else if (wire === 0) { let { pos: ip } = readVarint(bytes, i); i = ip; }
     else { i++; }
   }
-  return [];
+  return allRR;
 }
 
 export function parseExerciseData(bytes) {

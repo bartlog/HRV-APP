@@ -63,7 +63,12 @@ export class PFTPSession {
     this._responseReject  = null;
     this._responseTimer   = null;
     this._dataChunks      = [];
+
+    // Tracks whether stopRecording() was successfully called during sync
+    this._recordingStopped = false;
   }
+
+  get recordingStopped() { return this._recordingStopped; }
 
   // -------------------------------------------------------------------------
   // Connection
@@ -226,9 +231,11 @@ export class PFTPSession {
         const fileResp = await this._sendCommand(_buildGetCmd(path));
         const fileBytes = Array.from(new Uint8Array(fileResp));
         if (fileBytes.length > 4) {
+          const hexPreview = fileBytes.slice(0, 16).map(b => b.toString(16).padStart(2,'0')).join(' ');
+          this._log(`${filename}: ${fileBytes.length}b, first bytes: [${hexPreview}]`);
           const rr = parseExerciseData(fileBytes);
-          this._log(`Downloaded ${rr.length} RR values from ${filename}`);
-          return rr;
+          this._log(`${filename}: parsed ${rr.length} RR values`);
+          if (rr.length > 0) return rr;
         }
       } catch (e) {
         this._log(`${filename}: ${e.message}`);
@@ -272,8 +279,11 @@ export class PFTPSession {
     if (battery !== null) log(tf('sync.battery', { pct: battery }));
 
     log(t('sync.stopping'));
-    try { await this.stopRecording(); await new Promise(r => setTimeout(r, 3000)); }
-    catch (e) { this._log(`Stop warning: ${e.message}`); }
+    try {
+      await this.stopRecording();
+      this._recordingStopped = true;
+      await new Promise(r => setTimeout(r, 3000));
+    } catch (e) { this._log(`Stop warning: ${e.message}`); }
 
     let exercises = await this.listExercises();
 

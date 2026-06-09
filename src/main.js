@@ -390,6 +390,13 @@ async function syncOfflineSession() {
     if (statusEl) { statusEl.textContent = tf('status.error', { msg: err.message }); statusEl.classList.remove('hidden'); }
     console.error('[Sync error]', err);
     session.disconnect();
+    // If stopRecording() already ran, the H10 is no longer recording — clear recording state
+    if (session.recordingStopped) {
+      offlineRecordingActive = false;
+      sessionStorage.removeItem('offlineRecording');
+      setBLEStatus('off');
+      updateRecordingButtons();
+    }
   } finally {
     if (btn) btn.disabled = false;
   }
