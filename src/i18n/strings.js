@@ -67,6 +67,7 @@ export const strings = {
     'quality.medium': 'Mittel',
     'quality.bad': 'Schlecht',
     // Chart labels in analysis panel
+    'chart.hr_label': 'Herzfrequenz',
     'chart.rmssd_label': 'RMSSD',
     'chart.si_label': 'Stress-Index',
     'chart.window': 'Ø je 50 Herzschläge',
@@ -181,6 +182,7 @@ export const strings = {
     'quality.medium': 'Fair',
     'quality.bad': 'Poor',
     // Chart labels in analysis panel
+    'chart.hr_label': 'Heart Rate',
     'chart.rmssd_label': 'RMSSD',
     'chart.si_label': 'Stress Index',
     'chart.window': 'Avg per 50 beats',

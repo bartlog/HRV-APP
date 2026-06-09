@@ -151,7 +151,7 @@ function startMockSession() {
       const hr = 60000 / meanRR;
 
       updateMetrics({ rmssd: r, sdnn: s, si, hr, lfhf: NaN, edr: NaN });
-      charts?.addPoint(Date.now(), r, si);
+      charts?.addPoint(Date.now(), r, si, hr);
 
       if (activeSessionId) {
         saveHRVMetrics(activeSessionId, { rmssd: r, sdnn: s, si, lf: NaN, hf: NaN, lfhf: NaN, edr: NaN }).catch(() => {});
@@ -248,7 +248,7 @@ async function startLiveSession() {
         const s = sdnn(rrBuffer);
         const si = baevskySI(rrBuffer);
         updateMetrics({ rmssd: r, sdnn: s, si, hr, lfhf: NaN, edr: NaN });
-        charts?.addPoint(Date.now(), r, si);
+        charts?.addPoint(Date.now(), r, si, hr);
         if (activeSessionId) {
           saveHRVMetrics(activeSessionId, { rmssd: r, sdnn: s, si, lf: NaN, hf: NaN, lfhf: NaN, edr: NaN }).catch(() => {});
         }
@@ -507,11 +507,13 @@ async function analyzeSession(sessionId, panel) {
   const wRmssd = Math.round(rmssd(rrValues));
   const wSdnn  = Math.round(sdnn(rrValues));
 
-  // Windowed RMSSD + SI — 50-beat windows for smooth curve, real clock times on x-axis
+  // Windowed HR + RMSSD + SI — 50-beat windows for smooth curve, real clock times on x-axis
   const WIN = 50;
-  const rmssdSeries = [], siSeries = [], timeLabels = [];
+  const hrSeries = [], rmssdSeries = [], siSeries = [], timeLabels = [];
   for (let i = WIN; i <= rrValues.length; i += WIN) {
     const w = rrValues.slice(i - WIN, i);
+    const meanRR = w.reduce((a, b) => a + b, 0) / w.length;
+    hrSeries.push(Math.round(60000 / meanRR));
     rmssdSeries.push(Math.round(rmssd(w)));
     siSeries.push(Math.round(baevskySI(w)));
     timeLabels.push(new Date(filteredRows[i - 1].timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }));
@@ -537,6 +539,10 @@ async function analyzeSession(sessionId, panel) {
       <div class="analysis-stat"><div class="stat-label">${t('stat.quality')}</div><div class="stat-value" style="color:${qualityColor}">${quality}<small> (${artifactPct}%)</small></div></div>
     </div>
     <div class="analysis-charts">
+      <div class="analysis-chart-wrap">
+        <p class="chart-label">${t('chart.hr_label')} <span style="color:#fbbf24">■</span> — ${t('chart.window')}</p>
+        <canvas id="ac-hr-${sessionId}"></canvas>
+      </div>
       <div class="analysis-chart-wrap">
         <p class="chart-label">${t('chart.rmssd_label')} <span style="color:#4f8ef7">■</span> — ${t('chart.window')}</p>
         <canvas id="ac-rmssd-${sessionId}"></canvas>
@@ -573,6 +579,22 @@ async function analyzeSession(sessionId, panel) {
   };
 
   if (rmssdSeries.length > 1) {
+    new ChartAuto(document.getElementById(`ac-hr-${sessionId}`), {
+      type: 'line',
+      data: {
+        labels: timeLabels,
+        datasets: [{ label: 'HR', data: hrSeries, borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,.08)', tension: 0.35, pointRadius: 3, fill: true }],
+      },
+      options: {
+        responsive: true, animation: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: tickColor, font: { size: 10 }, maxRotation: 45 }, grid: { color: gridColor } },
+          y: { ticks: { color: '#fbbf24', font: { size: 10 } }, grid: { color: gridColor }, title: { display: true, text: 'bpm', color: '#fbbf24' } },
+        },
+      },
+    });
+
     new ChartAuto(document.getElementById(`ac-rmssd-${sessionId}`), {
       type: 'line',
       data: {

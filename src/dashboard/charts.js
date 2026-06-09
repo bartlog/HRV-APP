@@ -69,12 +69,13 @@ function makeChart(canvasId, label, color, extraPlugins = []) {
 
 export class DashboardCharts {
   constructor() {
-    this._rmssdChart = makeChart('chart-rmssd', 'RMSSD (ms)', '#4f8ef7');
-    this._siChart    = makeChart('chart-si',    'Stress-Index', '#f87171', [siZonesPlugin]);
+    this._hrChart    = makeChart('chart-hr',    'HR (bpm)',     '#fbbf24');
+    this._rmssdChart = makeChart('chart-rmssd', 'RMSSD (ms)',   '#4f8ef7');
+    this._siChart    = makeChart('chart-si',    'Stress-Index', '#a78bfa', [siZonesPlugin]);
   }
 
   reset() {
-    for (const chart of [this._rmssdChart, this._siChart]) {
+    for (const chart of [this._hrChart, this._rmssdChart, this._siChart]) {
       if (!chart) continue;
       chart.data.labels = [];
       chart.data.datasets[0].data = [];
@@ -82,8 +83,9 @@ export class DashboardCharts {
     }
   }
 
-  addPoint(timestampMs, rmssd, si) {
+  addPoint(timestampMs, rmssd, si, hr) {
     const label = new Date(timestampMs).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    this._push(this._hrChart,    label, hr);
     this._push(this._rmssdChart, label, rmssd);
     this._push(this._siChart,    label, si);
   }
