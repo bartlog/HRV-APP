@@ -198,46 +198,29 @@ export class PFTPSession {
   // -------------------------------------------------------------------------
 
   async listExercises() {
-    // H10 stores exercises at root level: /1/, /2/, etc.
-    // GET / returns PbPFtpDirectory with all entries (DEVICE.BPB + exercise dirs)
+    // H10 stores exercises at root level: /1/, /6A270133/, etc.
+    // GET / returns PbPFtpDirectory; skip known non-exercise entries.
     const resp = await this._sendCommand(_buildGetCmd('/'));
-    const bytes = Array.from(new Uint8Array(resp));
-    const dirs = [];
-    let i = 0;
-    while (i < bytes.length) {
-      const tag = bytes[i++];
-      if ((tag & 0x07) !== 2) { while (i < bytes.length && (bytes[i++] & 0x80)); continue; }
-      const outerLen = bytes[i++];
-      const outerEnd = i + outerLen;
-      let name = '', size = 0;
-      while (i < outerEnd) {
-        const innerTag = bytes[i++];
-        const innerField = innerTag >>> 3;
-        if ((innerTag & 0x07) === 2) {
-          const sLen = bytes[i++]; const sb = bytes.slice(i, i+sLen); i += sLen;
-          if (innerField === 1) name = new TextDecoder().decode(Uint8Array.from(sb));
-        } else if ((innerTag & 0x07) === 0) {
-          let v = 0, sh = 0;
-          while (i < outerEnd) { const b = bytes[i++]; v |= (b&0x7f)<<sh; if(!(b&0x80)) break; sh+=7; }
-          if (innerField === 2) size = v;
-        } else { i++; }
-      }
-      i = outerEnd;
-      // Only numeric exercise dirs (1/, 2/, etc.), skip DEVICE.BPB and ERRORLOG.BPB
-      if (name.endsWith('/') && /^\d+\/$/.test(name)) {
-        dirs.push(name.replace(/\/$/, ''));
-      }
-    }
-    return dirs;
+    const entries = _parsePbDir(Array.from(new Uint8Array(resp)));
+    const skip = new Set(['DEVICE.BPB', 'ERRORLOG.BPB', 'SYSTEM']);
+    return entries
+      .filter(e => e.name.endsWith('/') && !skip.has(e.name.slice(0, -1).toUpperCase()))
+      .map(e => e.name.slice(0, -1));
   }
 
   async fetchExercise(exerciseId) {
     const dirPath = `/${exerciseId}/`;
     const dirResp = await this._sendCommand(_buildGetCmd(dirPath));
-    const dirBytes = Array.from(new Uint8Array(dirResp));
-    this._log(`Dir ${dirPath} response: ${dirBytes.length}b`);
+    const entries = _parsePbDir(Array.from(new Uint8Array(dirResp)));
+    const listedFiles = entries.filter(e => !e.name.endsWith('/')).map(e => e.name);
+    this._log(`Dir ${dirPath}: [${listedFiles.join(', ') || 'empty'}]`);
 
-    for (const filename of ['SAMPLES.BPB', 'RR.BIN', '00000000.BIN', 'SAMPLES.GZ', 'AUTO.BIN']) {
+    // Try actual directory contents first, then known fallback names
+    const fallback = ['SAMPLES.BPB', 'RR.BIN', '00000000.BIN', 'SAMPLES.GZ', 'AUTO.BIN'];
+    const seen = new Set();
+    for (const filename of [...listedFiles, ...fallback]) {
+      if (seen.has(filename)) continue;
+      seen.add(filename);
       const path = `${dirPath}${filename}`;
       try {
         const fileResp = await this._sendCommand(_buildGetCmd(path));
@@ -256,12 +239,20 @@ export class PFTPSession {
 
   async removeExercise(exerciseId) {
     const dirPath = `/${exerciseId}/`;
-    // H10 requires files removed before directory (REMOVE on non-empty dir → error 103)
-    for (const fname of ['SAMPLES.BPB', 'RR.BIN', 'AUTO.BIN', '00000000.BIN', 'SAMPLES.GZ']) {
-      try { await this._sendCommand(_buildRemoveCmd(`${dirPath}${fname}`)); } catch {}
+    // List directory to delete actual files (not hardcoded names)
+    try {
+      const dirResp = await this._sendCommand(_buildGetCmd(dirPath));
+      const entries = _parsePbDir(Array.from(new Uint8Array(dirResp)));
+      for (const { name } of entries.filter(e => !e.name.endsWith('/'))) {
+        try { await this._sendCommand(_buildRemoveCmd(`${dirPath}${name}`)); } catch {}
+      }
+    } catch {
+      // Directory listing failed — fall back to known filenames
+      for (const fname of ['SAMPLES.BPB', 'RR.BIN', 'AUTO.BIN', '00000000.BIN', 'SAMPLES.GZ']) {
+        try { await this._sendCommand(_buildRemoveCmd(`${dirPath}${fname}`)); } catch {}
+      }
     }
-    // H10 auto-removes the directory when the last file is deleted.
-    // REMOVE /dir/ → 103 ("not found") = already gone = OK.
+    // H10 auto-removes dir when last file is deleted; REMOVE /dir/ → 103 = already gone = OK
     try { await this._sendCommand(_buildRemoveCmd(dirPath)); }
     catch (e) { if (!e.message.includes('103')) throw e; }
   }
@@ -454,6 +445,35 @@ function _buildRemoveCmd(path) {
 
 function _deviceFingerprint() {
   return `${navigator.userAgent}|${navigator.platform}`;
+}
+
+// Parse a PbPFtpDirectory response into [{name, size}] entries.
+// Used by listExercises() and fetchExercise() to read actual on-device filenames.
+function _parsePbDir(bytes) {
+  const entries = [];
+  let i = 0;
+  while (i < bytes.length) {
+    const tag = bytes[i++];
+    if ((tag & 0x07) !== 2) { while (i < bytes.length && (bytes[i++] & 0x80)); continue; }
+    const outerLen = bytes[i++];
+    const outerEnd = i + outerLen;
+    let name = '', size = 0;
+    while (i < outerEnd) {
+      const innerTag = bytes[i++];
+      const innerField = innerTag >>> 3;
+      if ((innerTag & 0x07) === 2) {
+        const sLen = bytes[i++]; const sb = bytes.slice(i, i + sLen); i += sLen;
+        if (innerField === 1) name = new TextDecoder().decode(Uint8Array.from(sb));
+      } else if ((innerTag & 0x07) === 0) {
+        let v = 0, sh = 0;
+        while (i < outerEnd) { const b = bytes[i++]; v |= (b & 0x7f) << sh; if (!(b & 0x80)) break; sh += 7; }
+        if (innerField === 2) size = v;
+      } else { i++; }
+    }
+    i = outerEnd;
+    if (name) entries.push({ name, size });
+  }
+  return entries;
 }
 
 function _reconstructTimeline(rrValues, startUtcMs) {
