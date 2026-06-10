@@ -1,7 +1,7 @@
 export const strings = {
   de: {
     // Header
-    'header.title': 'H10 Monitor',
+    'header.title': 'HRV-Monitor für Polar H10 – 100% vibecoded [beta]',
     // Tabs
     'tab.record': 'Aufzeichnen',
     'tab.analyze': 'Auswerten',
@@ -122,7 +122,7 @@ export const strings = {
 
   en: {
     // Header
-    'header.title': 'H10 Monitor',
+    'header.title': 'HRV-Monitor für Polar H10 – 100% vibecoded [beta]',
     // Tabs
     'tab.record': 'Record',
     'tab.analyze': 'Analyze',
