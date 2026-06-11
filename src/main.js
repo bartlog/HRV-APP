@@ -129,7 +129,6 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch {}
   }
 
-  startMockSession();
 });
 
 // --- Mock session ---
@@ -277,7 +276,6 @@ async function startLiveSession() {
     if (btn) { btn.textContent = t('live.connect'); btn.dataset.connectState = 'disconnected'; btn.disabled = false; }
     const cancelled = /cancel|denied|chosen/i.test(err.message);
     if (!cancelled) alert(tf('alert.connect_failed', { msg: err.message }));
-    startMockSession();
   }
 }
 
