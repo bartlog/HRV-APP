@@ -319,7 +319,9 @@ async function startOfflineRecording() {
     localStorage.setItem('offlineRecording', JSON.stringify({ exerciseId, startedAt: Date.now() }));
     setBLEStatus('recording');
     updateRecordingButtons();
+    logEntry('info', tf('status.recording_active', { id: exerciseId }));
     log(tf('status.recording_active', { id: exerciseId }));
+    showExportButton();
   } catch (err) {
     if (err instanceof BlockerError && err.code === 'UNSYNCED_SESSION') {
       const choice = confirm(tf('alert.unsynced_session', { exerciseId: err.exerciseId }));
@@ -355,7 +357,6 @@ async function syncOfflineSession() {
   const btnStart = document.getElementById('btn-start-recording');
   if (btn) btn.disabled = true;
 
-  clearLog();
   logEntry('info', 'Sync gestartet');
 
   const session = new PFTPSession(({ bytes }) => {
