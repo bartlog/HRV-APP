@@ -9,16 +9,13 @@ kein dauerhaftes Bluetooth nötig.
 
 ## Schritt 1 — Aufzeichnung starten (~5 Sek. BLE)
 
-H10 anlegen (→ Guide: H10 anlegen). PC/Laptop in BLE-Reichweite (~5 m).
+H10 anlegen (→ Guide: H10 anlegen). Gerät in BLE-Reichweite (~5 m).
 
 1. App → Tab **„Aufzeichnen"** → **„Aufzeichnung starten"**
 2. Browser-Dialog → Polar H10 auswählen
 3. App zeigt: *„Aufzeichnung aktiv. H10 zeichnet autonom auf."*
 4. BLE-Verbindung trennt sich automatisch
 5. Gerät kann weggelegt oder ausgeschaltet werden
-
-> **Wichtig:** Sync muss vom **selben Gerät** (Browser + Betriebssystem) erfolgen!
-> *(Firmware ≥ 4.1.10 Gerätebindung — Details am Ende dieser Anleitung)*
 
 ---
 
@@ -31,9 +28,9 @@ H10 anlegen (→ Guide: H10 anlegen). PC/Laptop in BLE-Reichweite (~5 m).
 
 ---
 
-## Schritt 3 — Synchronisieren (selbes Gerät!)
+## Schritt 3 — Synchronisieren
 
-PC/Laptop in BLE-Reichweite:
+Gerät in BLE-Reichweite:
 
 1. App öffnen → Tab **„Aufzeichnen"** → **„Aufzeichnung beenden und speichern"**
 2. Browser-Dialog → Polar H10 auswählen
@@ -54,15 +51,22 @@ PC/Laptop in BLE-Reichweite:
 
 ---
 
-## ⚠️ Geräte-Bindung — Firmware ≥ 4.1.10
+## Cross-Device: Start und Sync auf verschiedenen Geräten
 
-Ab Firmware 4.1.10 bindet der H10 eine Session an das BLE-Gerät, das die Aufzeichnung **gestartet** hat.
+Start und Sync können auf **verschiedenen Geräten** erfolgen — z. B. Aufzeichnung am Desktop starten, Synchronisation am Android-Handy durchführen.
 
-- Start auf **Windows-PC** → Sync muss auf demselben Windows-PC erfolgen
-- Start auf **MacBook** → Sync muss auf demselben MacBook erfolgen
-- Start auf **iPhone (Bluefy)** → Sync muss auf demselben iPhone in Bluefy erfolgen
+Unterstützte Kombinationen:
 
-Die App warnt beim Sync, wenn das Gerät vom gespeicherten Wert abweicht.
+| Start-Gerät | Sync-Gerät |
+|---|---|
+| Windows-PC (Chrome/Edge) | Windows-PC, MacBook, Android |
+| MacBook (Chrome) | Windows-PC, MacBook, Android |
+| Android (Chrome) | Windows-PC, MacBook, Android |
+| iPhone (Bluefy) | iPhone (Bluefy), weitere Bluefy-Geräte |
+
+> **Hinweis:** Wird auf einem anderen Gerät synchronisiert, rekonstruiert die App den Startzeit-Stempel automatisch aus den RR-Daten. Die Genauigkeit liegt bei ±1 Sekunde.
+
+> **Tipp:** Wer regelmäßig zwischen Geräten wechselt, sollte nach dem Starten kurz den Diagnose-Log exportieren — so ist der Start-Zeitstempel auch bei Gerätewechsel exakt dokumentiert (Guide: H10 Troubleshoot → Diagnose-Log).
 
 ---
 

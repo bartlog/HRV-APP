@@ -9,16 +9,13 @@ no continuous Bluetooth required.
 
 ## Step 1 — Start Recording (~5 sec BLE)
 
-Wear the H10 (→ Guide: Wearing H10). PC/laptop within BLE range (~5 m).
+Wear the H10 (→ Guide: Wearing H10). Device within BLE range (~5 m).
 
 1. App → **"Record"** tab → **"Start Recording"**
 2. Browser dialog → select Polar H10
 3. App shows: *"Recording active. H10 recording autonomously."*
 4. BLE connection disconnects automatically
 5. Device can be put away or turned off
-
-> **Important:** Sync must be done from the **same device** (browser + operating system)!
-> *(Firmware ≥ 4.1.10 device binding — details at the end of this guide)*
 
 ---
 
@@ -31,9 +28,9 @@ Wear the H10 (→ Guide: Wearing H10). PC/laptop within BLE range (~5 m).
 
 ---
 
-## Step 3 — Sync (same device!)
+## Step 3 — Sync
 
-PC/laptop within BLE range:
+Device within BLE range:
 
 1. Open app → **"Record"** tab → **"Stop & Save Recording"**
 2. Browser dialog → select Polar H10
@@ -54,15 +51,22 @@ PC/laptop within BLE range:
 
 ---
 
-## ⚠️ Device Binding — Firmware ≥ 4.1.10
+## Cross-Device: Start and Sync on Different Devices
 
-From firmware 4.1.10, the H10 binds a session to the BLE device that **started** the recording.
+Recording start and sync can happen on **different devices** — e.g. start on desktop, sync on Android phone.
 
-- Start on **Windows PC** → sync must be done on the same Windows PC
-- Start on **MacBook** → sync must be done on the same MacBook
-- Start on **iPhone (Bluefy)** → sync must be done on the same iPhone in Bluefy
+Supported combinations:
 
-The app warns during sync if the device differs from the stored value.
+| Start device | Sync device |
+|---|---|
+| Windows PC (Chrome/Edge) | Windows PC, MacBook, Android |
+| MacBook (Chrome) | Windows PC, MacBook, Android |
+| Android (Chrome) | Windows PC, MacBook, Android |
+| iPhone (Bluefy) | iPhone (Bluefy), other Bluefy devices |
+
+> **Note:** When syncing on a different device, the app automatically reconstructs the start timestamp from the RR data. Accuracy is within ±1 second.
+
+> **Tip:** If you regularly switch devices, export the diagnostic log right after starting the recording — this documents the exact start timestamp even when changing devices (Guide: H10 Troubleshoot → Diagnostic Log).
 
 ---
 

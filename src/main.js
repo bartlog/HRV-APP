@@ -367,9 +367,24 @@ async function syncOfflineSession() {
     const result = await session.sync(msg => {
       if (statusEl) { statusEl.textContent = msg; statusEl.classList.remove('hidden'); }
     });
-    const { sessionId, rrValues, rrWithTimestamps, durationH } = result;
+    let { sessionId, rrValues, rrWithTimestamps, durationH, exerciseId } = result;
 
-    if (sessionId) {
+    if (!sessionId) {
+      // Cross-device: recording was started on a different device — create session record here
+      const estimatedStart = rrWithTimestamps[0]?.timestamp ?? Date.now();
+      sessionId = await db.sessions.add({
+        startTime: estimatedStart,
+        mode: 'offline',
+        synced: true,
+        exerciseId,
+        startUtc: new Date(estimatedStart).toISOString(),
+        rrCount: rrValues.length,
+        durationH,
+        syncTime: Date.now(),
+      });
+    }
+
+    {
       let syncPrev = null, artifactCount = 0;
       const annotated = rrWithTimestamps.map(({ timestamp, rrMs }) => {
         const filtered = filterRR(rrMs, syncPrev);
@@ -403,10 +418,6 @@ async function syncOfflineSession() {
       if (statusEl) statusEl.textContent = tf('status.synced', {
         total, artifacts: artifactCount, pct: artifactPct, quality,
         rmssd: Math.round(rmssd(cleanValues)), si: siSync,
-      });
-    } else {
-      if (statusEl) statusEl.textContent = tf('status.synced_no_session', {
-        total: rrValues.length, duration: durationH,
       });
     }
 

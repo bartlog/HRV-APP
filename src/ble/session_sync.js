@@ -334,7 +334,8 @@ export class PFTPSession {
     }
 
     const pending = await db.sessions.where('mode').equals('offline').filter(s=>!s.synced).last();
-    const startUtc = pending?.startUtc ? new Date(pending.startUtc).getTime() : Date.now();
+    const totalMs = rrValues.reduce((a, b) => a + b, 0);
+    const startUtc = pending?.startUtc ? new Date(pending.startUtc).getTime() : Date.now() - totalMs;
     const rrWithTimestamps = _reconstructTimeline(rrValues, startUtc);
     const durationH = +(rrValues.reduce((a,b)=>a+b,0)/1000/3600).toFixed(2);
     log(tf('sync.rrcount', { count: rrValues.length, h: durationH }));
@@ -343,7 +344,7 @@ export class PFTPSession {
     await this.removeExercise(exerciseId);
     this.disconnect();
 
-    if (pending) await db.sessions.update(pending.id, { synced: true, rrCount: rrValues.length, syncTime: Date.now() });
+    if (pending) await db.sessions.update(pending.id, { synced: true, rrCount: rrValues.length, syncTime: Date.now(), durationH });
 
     log(t('sync.done'));
     return { exerciseId, sessionId: pending?.id, rrValues, rrWithTimestamps, durationH };
