@@ -141,6 +141,7 @@ html, body {
 .metric-card__label { font-size: .72rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: .07em; margin-bottom: .35rem; }
 .metric-card__value { font-size: 1.8rem; font-weight: 700; font-family: var(--font-mono); color: var(--color-text); line-height: 1; }
 .metric-card__unit { font-size: .7rem; color: var(--color-text-muted); margin-top: .2rem; }
+.metric-card.hidden { display: none; }
 
 /* --- Charts --- */
 .chart-container {
