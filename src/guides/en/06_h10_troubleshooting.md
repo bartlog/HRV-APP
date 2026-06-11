@@ -158,6 +158,50 @@ Step 8 (REMOVE) is critical: only delete after successful download, otherwise da
 
 ---
 
+## Diagnostic Log
+
+The app automatically records every step of a recording and sync — including all BLE packets, error codes, and timestamps. This data can be exported as a text file and shared for error analysis.
+
+### When to export?
+
+**After starting a recording:**
+Once a recording has been started (successfully or with an error), the **"Export diagnostic log"** button appears in the "Record" tab. For recordings started on a smartphone: **export the log immediately after starting and keep it** — device memory is cleared on restart, and the start log would be lost.
+
+**After a sync attempt:**
+After every sync attempt (successful or failed), the button also appears. The log then contains both the start and sync sequence in one file — provided the device was not restarted between start and sync.
+
+### What does the log contain?
+
+```
+=== HRV-Monitor Diagnose-Log ===
+Datum:   2026-06-10T08:15:33.421Z
+Browser: Mozilla/5.0 (iPhone; CPU iPhone OS 17_4...) Bluefy/...
+URL:     https://bartlog.github.io/HRV-APP/
+========================================
+
+[08:15:33.421] [INFO ] Sync started
+[08:15:33.890] [DEBUG] Requesting Polar H10 via Web Bluetooth…
+[08:15:35.102] [DEBUG] Found: Polar H10 A1B2C3D4
+[08:15:36.450] [DEBUG] PSFTP channel ready
+[08:15:36.451] [DEBUG] TX (3 pkt): 02 00 0f 80 | ...
+[08:15:36.812] [DEBUG] RX 51: 01 00 00 (status=1 seq=0)
+[08:15:39.001] [DEBUG] /6A270133/: [empty]
+[08:15:39.002] [ERROR] No data file found in /6A270133/
+```
+
+The log contains:
+- Date and time (millisecond precision)
+- Browser and device identifier
+- Every BLE command sent (TX) and every H10 response (RX)
+- Error codes and error messages
+- Result of start and sync
+
+### How to share
+
+Click the "Export diagnostic log" button → a `.txt` file is downloaded → send via email or chat.
+
+---
+
 ## Quick Fixes at a Glance
 
 | Problem | Quick Fix |

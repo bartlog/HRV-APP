@@ -158,6 +158,50 @@ Schritt 8 (REMOVE) ist kritisch: erst nach erfolgreichem Download löschen, sons
 
 ---
 
+## Diagnose-Log
+
+Die App protokolliert automatisch jeden Schritt einer Aufzeichnung und Synchronisation — inklusive aller BLE-Pakete, Fehlercodes und Zeitstempel. Diese Daten lassen sich als Textdatei exportieren und zur Fehleranalyse weiterleiten.
+
+### Wann exportieren?
+
+**Nach dem Starten einer Aufzeichnung:**
+Sobald die Aufzeichnung gestartet wurde (erfolgreich oder mit Fehler), erscheint der Button **„Diagnose-Log exportieren"** im Tab „Aufzeichnen". Bei Aufzeichnungen vom Smartphone: **Log direkt nach dem Start exportieren und aufheben** — der Speicher wird bei einem Geräteneustart geleert, das Protokoll des Starts wäre danach verloren.
+
+**Nach einem Sync-Versuch:**
+Nach jedem Sync-Versuch (egal ob erfolgreich oder fehlgeschlagen) erscheint der Button ebenfalls. Der Log enthält dann sowohl den Start- als auch den Sync-Verlauf in einer Datei — sofern das Gerät zwischen Start und Sync nicht neu gestartet wurde.
+
+### Was enthält das Log?
+
+```
+=== HRV-Monitor Diagnose-Log ===
+Datum:   2026-06-10T08:15:33.421Z
+Browser: Mozilla/5.0 (iPhone; CPU iPhone OS 17_4...) Bluefy/...
+URL:     https://bartlog.github.io/HRV-APP/
+========================================
+
+[08:15:33.421] [INFO ] Sync gestartet
+[08:15:33.890] [DEBUG] Requesting Polar H10 via Web Bluetooth…
+[08:15:35.102] [DEBUG] Found: Polar H10 A1B2C3D4
+[08:15:36.450] [DEBUG] PSFTP channel ready
+[08:15:36.451] [DEBUG] TX (3 pkt): 02 00 0f 80 | ...
+[08:15:36.812] [DEBUG] RX 51: 01 00 00 (status=1 seq=0)
+[08:15:39.001] [DEBUG] /6A270133/: [empty]
+[08:15:39.002] [ERROR] No data file found in /6A270133/
+```
+
+Das Log enthält:
+- Datum, Uhrzeit (ms-genau)
+- Browser und Gerätekennung
+- Jeden gesendeten BLE-Befehl (TX) und jede Antwort des H10 (RX)
+- Fehlercodes und Fehlermeldungen
+- Ergebnis von Start und Sync
+
+### So weitergeben
+
+Den Button „Diagnose-Log exportieren" klicken → eine `.txt`-Datei wird heruntergeladen → per E-Mail oder Chat weiterleiten.
+
+---
+
 ## Quick-Fixes auf einen Blick
 
 | Problem | Quick-Fix |
