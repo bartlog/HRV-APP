@@ -330,7 +330,8 @@ html, body {
 body { padding-bottom: env(safe-area-inset-bottom); }
 
 @media (max-width: 640px) {
-  .header__title { display: none; }
+  .header__brand { flex-direction: column; align-items: flex-start; gap: .1rem; flex: 1; }
+  .header__title { font-size: .7rem; font-weight: 400; opacity: .8; white-space: normal; }
   .guides-layout { grid-template-columns: 1fr; }
   .guides-nav { flex-direction: row; overflow-x: auto; }
   .metric-card__value { font-size: 1.4rem; }
