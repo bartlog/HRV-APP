@@ -101,6 +101,7 @@ export function initTabs() {
 export function setMode(mode) {
   const badge = document.getElementById('mode-badge');
   if (!badge) return;
+  if (!mode || mode === 'none') { badge.classList.add('hidden'); return; }
   badge.className = `mode-badge mode-badge--${mode}`;
   badge.textContent = { mock: 'SIMULATION', live: 'LIVE', offline: 'OFFLINE' }[mode] ?? mode.toUpperCase();
 }

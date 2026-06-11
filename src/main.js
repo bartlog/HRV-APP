@@ -1578,4 +1578,5 @@ function stopActiveSession() {
   ecgLiveBuffer.length = 0;
   prevRR = null;
   if (!offlineRecordingActive) setBLEStatus('off');
+  setMode('none');
 }
