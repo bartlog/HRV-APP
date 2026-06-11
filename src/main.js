@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelector('[data-tab="sessions"]')?.addEventListener('click', renderSessionList);
 
   // Restore recording state after page refresh
-  const savedRecording = sessionStorage.getItem('offlineRecording');
+  const savedRecording = localStorage.getItem('offlineRecording');
   if (savedRecording) {
     try {
       const { startedAt } = JSON.parse(savedRecording);
@@ -316,7 +316,7 @@ async function startOfflineRecording() {
     const exerciseId = Math.floor(Date.now() / 1000).toString(16).toUpperCase();
     await session.startRecording(exerciseId);
     offlineRecordingActive = true;
-    sessionStorage.setItem('offlineRecording', JSON.stringify({ exerciseId, startedAt: Date.now() }));
+    localStorage.setItem('offlineRecording', JSON.stringify({ exerciseId, startedAt: Date.now() }));
     setBLEStatus('recording');
     updateRecordingButtons();
     log(tf('status.recording_active', { id: exerciseId }));
@@ -412,7 +412,7 @@ async function syncOfflineSession() {
     logEntry('info', 'Sync abgeschlossen');
     showExportButton();
     offlineRecordingActive = false;
-    sessionStorage.removeItem('offlineRecording');
+    localStorage.removeItem('offlineRecording');
     setBLEStatus('off');
     updateRecordingButtons();
     renderSessionList();
@@ -425,7 +425,7 @@ async function syncOfflineSession() {
     // If stopRecording() already ran, the H10 is no longer recording — clear recording state
     if (session.recordingStopped) {
       offlineRecordingActive = false;
-      sessionStorage.removeItem('offlineRecording');
+      localStorage.removeItem('offlineRecording');
       setBLEStatus('off');
       updateRecordingButtons();
     }
