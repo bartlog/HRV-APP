@@ -313,7 +313,7 @@ html, body {
 }
 
 /* --- ECG section inside Live tab --- */
-.ecg-section { margin-top: 1.5rem; border-top: 1px solid var(--color-border); padding-top: 1rem; }
+.ecg-section { display: none; margin-top: 1.5rem; border-top: 1px solid var(--color-border); padding-top: 1rem; }
 
 /* --- Language toggle --- */
 .lang-toggle { display: flex; gap: 2px; }
