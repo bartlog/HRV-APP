@@ -12,6 +12,7 @@ import { exportSessionCSV } from './export/csv_export.js';
 import ChartAuto from 'chart.js/auto';
 import { PFTPSession, BlockerError } from './ble/session_sync.js';
 import { LiveSession } from './ble/live_session.js';
+import { log as logEntry, exportAsText, clear as clearLog } from './log/logger.js';
 import './app.css';
 
 // --- State ---
@@ -31,6 +32,10 @@ let ecgViewer = null;
 
 function ensureCharts() {
   if (!charts) charts = new DashboardCharts();
+}
+
+function showExportButton() {
+  document.getElementById('btn-export-log')?.classList.remove('hidden');
 }
 
 // --- Init ---
@@ -73,6 +78,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // Signal guide panel to reload
       window.dispatchEvent(new Event('languagechange'));
     });
+  });
+
+  document.getElementById('btn-export-log')?.addEventListener('click', () => {
+    const txt = exportAsText();
+    const blob = new Blob([txt], { type: 'text/plain' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `hrv-log-${new Date().toISOString().slice(0, 16).replace('T', '-')}.txt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
   });
 
   document.getElementById('btn-mock')?.addEventListener('click', startMockSession);
@@ -290,9 +305,11 @@ async function startOfflineRecording() {
     if (statusEl) { statusEl.textContent = msg; statusEl.classList.remove('hidden'); }
   }
 
+  clearLog();
   const session = new PFTPSession();
   try {
     log(t('status.connecting_h10'));
+    logEntry('info', t('status.connecting_h10'));
     const deviceName = await session.connect();
     log(tf('status.connected', { name: deviceName }));
     // Short hex timestamp (8 chars) — H10 FAT filesystem has trouble with long/underscore IDs
@@ -319,6 +336,8 @@ async function startOfflineRecording() {
       }
     } else {
       log(tf('status.error', { msg: err.message }));
+      logEntry('error', err.message);
+      showExportButton();
     }
     session.disconnect();
   } finally {
@@ -335,6 +354,9 @@ async function syncOfflineSession() {
   const btn = document.getElementById('btn-sync');
   const btnStart = document.getElementById('btn-start-recording');
   if (btn) btn.disabled = true;
+
+  clearLog();
+  logEntry('info', 'Sync gestartet');
 
   const session = new PFTPSession(({ bytes }) => {
     if (statusEl) statusEl.textContent = tf('status.downloading', { bytes });
@@ -387,6 +409,8 @@ async function syncOfflineSession() {
       });
     }
 
+    logEntry('info', 'Sync abgeschlossen');
+    showExportButton();
     offlineRecordingActive = false;
     sessionStorage.removeItem('offlineRecording');
     setBLEStatus('off');
@@ -395,6 +419,8 @@ async function syncOfflineSession() {
   } catch (err) {
     if (statusEl) { statusEl.textContent = tf('status.error', { msg: err.message }); statusEl.classList.remove('hidden'); }
     console.error('[Sync error]', err);
+    logEntry('error', err.message);
+    showExportButton();
     session.disconnect();
     // If stopRecording() already ran, the H10 is no longer recording — clear recording state
     if (session.recordingStopped) {

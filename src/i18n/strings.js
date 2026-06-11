@@ -8,6 +8,7 @@ export const strings = {
     'tab.live': 'Live',
     'tab.guides': 'Anleitungen',
     // Record tab
+    'offline.export_log': 'Diagnose-Log exportieren',
     'section.record.title': '24h Offline-Aufzeichnung',
     'record.start.heading': 'Aufzeichnung starten',
     'record.start.desc': 'H10 speichert RR-Intervalle intern für 20–30 Stunden. Kein dauerhaftes Bluetooth nötig.',
@@ -129,6 +130,7 @@ export const strings = {
     'tab.live': 'Live',
     'tab.guides': 'Guides',
     // Record tab
+    'offline.export_log': 'Export diagnostic log',
     'section.record.title': '24h Offline Recording',
     'record.start.heading': 'Start Recording',
     'record.start.desc': 'The H10 stores RR intervals internally for 20–30 hours. No continuous Bluetooth required.',

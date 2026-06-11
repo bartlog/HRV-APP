@@ -43,6 +43,7 @@ import {
 
 import { db } from '../storage/db.js';
 import { t, tf } from '../i18n/index.js';
+import { log as logEntry } from '../log/logger.js';
 
 const PFTP_TIMEOUT_MS = 10000;
 
@@ -304,6 +305,7 @@ export class PFTPSession {
 
     if (exercises.length === 0) {
       this.disconnect();
+      logEntry('error', t('sync.no_session'));
       throw new Error(t('sync.no_session'));
     }
 
@@ -315,6 +317,7 @@ export class PFTPSession {
     } catch (e) {
       // No data files found — exercise is empty. Clean it up so next sync won't re-try it.
       this._log(`fetchExercise failed (${e.message}) — removing empty exercise dir`);
+      logEntry('error', `fetchExercise: ${e.message}`);
       try { await this.removeExercise(exerciseId); } catch {}
       this.disconnect();
       throw e;
@@ -323,9 +326,11 @@ export class PFTPSession {
     if (rrValues.length < 10) {
       // Too few RR values — likely H10 not worn. Clean up the useless exercise.
       this._log(`Only ${rrValues.length} RR values — removing exercise dir`);
+      const tooFewMsg = tf('sync.too_few_rr', { count: rrValues.length });
+      logEntry('error', tooFewMsg);
       try { await this.removeExercise(exerciseId); } catch {}
       this.disconnect();
-      throw new Error(tf('sync.too_few_rr', { count: rrValues.length }));
+      throw new Error(tooFewMsg);
     }
 
     const pending = await db.sessions.where('mode').equals('offline').filter(s=>!s.synced).last();
@@ -438,7 +443,7 @@ export class PFTPSession {
     return !!s;
   }
 
-  _log(msg) { console.log(`[PFTP] ${msg}`); }
+  _log(msg) { console.log(`[PFTP] ${msg}`); logEntry('debug', msg); }
 }
 
 // -------------------------------------------------------------------------
