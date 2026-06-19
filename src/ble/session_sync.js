@@ -242,6 +242,11 @@ export class PFTPSession {
         this._log(`${filename}: ${e.message}`);
       }
     }
+    // Distinguish: listed files existed but couldn't be parsed (don't delete!)
+    // vs. directory was genuinely empty (safe to delete)
+    if (listedFiles.length > 0) {
+      throw new Error(`Data files found but no RR values parsed in ${dirPath}`);
+    }
     throw new Error(`No data file found in ${dirPath}`);
   }
 
@@ -315,10 +320,15 @@ export class PFTPSession {
     try {
       rrValues = await this.fetchExercise(exerciseId);
     } catch (e) {
-      // No data files found — exercise is empty. Clean it up so next sync won't re-try it.
-      this._log(`fetchExercise failed (${e.message}) — removing empty exercise dir`);
+      // Only delete the exercise dir if it was genuinely empty (no files listed).
+      // If files existed but were unreadable (timeout, parse error), keep them — the
+      // recording may still be recoverable on a subsequent sync attempt.
+      const genuinelyEmpty = e.message.startsWith('No data file found');
+      this._log(`fetchExercise failed (${e.message}) — ${genuinelyEmpty ? 'removing empty exercise dir' : 'keeping exercise (files unreadable)'}`);
       logEntry('error', `fetchExercise: ${e.message}`);
-      try { await this.removeExercise(exerciseId); } catch {}
+      if (genuinelyEmpty) {
+        try { await this.removeExercise(exerciseId); } catch {}
+      }
       this.disconnect();
       throw e;
     }
@@ -388,6 +398,16 @@ export class PFTPSession {
     switch (h.status) {
       case 3: // MORE — accumulate chunk
         this._dataChunks.push(Array.from(payload));
+        // Reset per-packet timeout — large files (e.g. 7h SAMPLES.BPB ~75KB) take
+        // well over 10s to transfer; only trigger if H10 goes silent mid-transfer.
+        if (this._responseTimer !== null) {
+          clearTimeout(this._responseTimer);
+          const rejectFn = this._responseReject;
+          this._responseTimer = setTimeout(() => {
+            this._responseResolve = null; this._responseReject = null;
+            rejectFn?.(new Error(`PFTP timeout (${PFTP_TIMEOUT_MS}ms)`));
+          }, PFTP_TIMEOUT_MS);
+        }
         break;
 
       case 1: { // LAST — final data chunk, response complete
